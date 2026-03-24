@@ -773,7 +773,9 @@ body.drag-over #calendar-area::after {
 
 /* ── Very small screens (< 380px) ───────────────────────────────────────────── */
 @media (max-width: 380px) {
-  .app-logo { font-size: 15px; }
-  .search-wrap { min-width: 50px; }
-  #import-btn { display: none; }
+  .app-logo { font-size: 14px; }
+  /* Hide the "Today" label on the nav button to save space in row 1 */
+  #today-btn { padding: 0 6px; font-size: 11px; }
+  /* Weeks selector narrower */
+  #weeks-select { font-size: 11px; }
 }
