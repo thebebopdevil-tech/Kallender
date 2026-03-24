@@ -161,30 +161,6 @@ function closeSidebar() {
   document.body.style.overflow = '';
 }
 
-// ── Import menu dropdown ──────────────────────────────────────────────────────
-
-function openImportMenu() {
-  const menu = document.getElementById('import-menu');
-  const btn  = document.getElementById('import-btn');
-  menu.hidden = false;
-  btn.setAttribute('aria-expanded', 'true');
-}
-
-function closeImportMenu() {
-  const menu = document.getElementById('import-menu');
-  const btn  = document.getElementById('import-btn');
-  if (!menu) return;
-  menu.hidden = true;
-  btn.setAttribute('aria-expanded', 'false');
-}
-
-function toggleImportMenu(e) {
-  e.stopPropagation();
-  const menu = document.getElementById('import-menu');
-  if (menu.hidden) openImportMenu();
-  else closeImportMenu();
-}
-
 // ── Subscribe dialog ──────────────────────────────────────────────────────────
 
 function openSubscribeDialog() {
