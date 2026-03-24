@@ -338,6 +338,188 @@ function formatLastSynced(ts) {
   return `${Math.floor(diff / 86_400_000)}d ago`;
 }
 
+// ── Toast notification ────────────────────────────────────────────────────────
+
+function showToast(msg) {
+  const existing = document.getElementById('kallendar-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id        = 'kallendar-toast';
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+
+  // Trigger animation on next frame
+  requestAnimationFrame(() => toast.classList.add('toast-show'));
+
+  setTimeout(() => {
+    toast.classList.remove('toast-show');
+    setTimeout(() => toast.remove(), 350);
+  }, 2500);
+}
+
+// ── Shareable URL (Option A) ──────────────────────────────────────────────────
+
+function generateShareURL() {
+  const items = calendars
+    .filter(c => c.url)
+    .map(c => ({ url: c.url, name: c.name, color: c.color }));
+
+  if (items.length === 0) return null;
+
+  const json    = JSON.stringify({ v: 1, calendars: items });
+  const encoded = btoa(unescape(encodeURIComponent(json)));
+  return window.location.origin + window.location.pathname + '?calendars=' + encoded;
+}
+
+function copyShareLink() {
+  const url = generateShareURL();
+  if (!url) {
+    showToast('No subscribed calendars to share.');
+    return;
+  }
+
+  const doToast = () => showToast('Link copied!');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(doToast).catch(() => {
+      fallbackCopy(url);
+      doToast();
+    });
+  } else {
+    fallbackCopy(url);
+    doToast();
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch (_) {}
+  document.body.removeChild(ta);
+}
+
+function importFromURL() {
+  const params  = new URLSearchParams(window.location.search);
+  const encoded = params.get('calendars');
+  if (!encoded) return;
+
+  // Clean the URL immediately so it doesn't re-import on reload
+  history.replaceState(null, '', window.location.pathname);
+
+  try {
+    const json = decodeURIComponent(escape(atob(encoded)));
+    const data = JSON.parse(json);
+    if (!data.calendars || !Array.isArray(data.calendars)) return;
+
+    let added = 0;
+    data.calendars.forEach(item => {
+      if (!item.url) return;
+      if (calendars.some(c => c.url === item.url)) return; // skip duplicates
+      const id = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      calendars.push({
+        id,
+        name:       item.name  || '',
+        color:      item.color || PALETTE[calendars.length % PALETTE.length],
+        events:     [],
+        visible:    true,
+        type:       'url',
+        url:        item.url,
+        lastSynced: null,
+        syncError:  false,
+      });
+      added++;
+    });
+
+    if (added > 0) {
+      saveToStorage();
+      // Renders happen after DOMContentLoaded flow completes; use a small delay
+      // so the DOM is ready before we show the toast
+      setTimeout(() => {
+        renderCalendarList();
+        renderWeek();
+        syncAllSubscribed();
+        showToast(`${added} calendar${added !== 1 ? 's' : ''} imported!`);
+      }, 100);
+    }
+  } catch (e) {
+    console.warn('[Kallendar] Failed to import from URL:', e);
+  }
+}
+
+// ── Export / Import config (Option B) ────────────────────────────────────────
+
+function exportConfig() {
+  const data = {
+    v:        1,
+    exported: new Date().toISOString(),
+    calendars: calendars.map(c => ({
+      name:  c.name,
+      color: c.color,
+      type:  c.type,
+      ...(c.url ? { url: c.url } : {}),
+    })),
+  };
+
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'kallendar-config.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importConfigFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.calendars || !Array.isArray(data.calendars)) {
+        showToast('Invalid config file.');
+        return;
+      }
+
+      let added = 0;
+      data.calendars.forEach(item => {
+        if (!item.url) return; // file-imported cals have no URL → can't restore
+        if (calendars.some(c => c.url === item.url)) return; // skip duplicates
+        const id = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        calendars.push({
+          id,
+          name:       item.name  || '',
+          color:      item.color || PALETTE[calendars.length % PALETTE.length],
+          events:     [],
+          visible:    true,
+          type:       'url',
+          url:        item.url,
+          lastSynced: null,
+          syncError:  false,
+        });
+        added++;
+      });
+
+      if (added > 0) {
+        saveToStorage();
+        renderCalendarList();
+        renderWeek();
+        syncAllSubscribed();
+        showToast(`${added} calendar${added !== 1 ? 's' : ''} restored!`);
+      } else {
+        showToast('No new calendars to import.');
+      }
+    } catch (_) {
+      showToast('Failed to read config file.');
+    }
+  };
+  reader.readAsText(file);
+}
+
 // ── UI Bindings ───────────────────────────────────────────────────────────────
 
 function bindUI() {
