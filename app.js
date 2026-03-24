@@ -243,10 +243,10 @@ function bindSwipe() {
 function bindResize() {
   let lastNumWeeks = getNumWeeks();
   window.addEventListener('resize', () => {
+    updateWeeksSelector(); // always keep select in sync with cap
     const now = getNumWeeks();
     if (now !== lastNumWeeks) {
       lastNumWeeks = now;
-      // When switching to desktop, snap currentWeekStart to stay in view
       renderWeek();
     }
   });
