@@ -80,6 +80,13 @@ function loadFromStorage() {
   } catch (e) {
     calendars = [];
   }
+
+  // Load preferred week count
+  const savedWeeks = localStorage.getItem('kallendar_weeks');
+  if (savedWeeks) {
+    const n = parseInt(savedWeeks, 10);
+    if (WEEK_OPTIONS.includes(n)) preferredWeeks = n;
+  }
 }
 
 function saveToStorage() {
