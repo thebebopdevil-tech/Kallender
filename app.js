@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFromStorage();
   applyTheme(getSavedTheme());
   renderCalendarList();
-  renderWeek();
-  bindUI();
+  bindUI();      // initialises weeks selector before first render
   bindResize();
+  renderWeek();
 });
 
 // ── Mobile helpers ────────────────────────────────────────────────────────────
