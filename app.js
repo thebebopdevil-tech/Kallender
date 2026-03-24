@@ -925,7 +925,7 @@ function openPopup(ev, cal) {
   const locRow = document.getElementById('popup-location-row');
   if (ev.location) {
     locRow.style.display = '';
-    document.getElementById('popup-location').textContent = ev.location;
+    document.getElementById('popup-location').innerHTML = linkifyText(ev.location);
   } else {
     locRow.style.display = 'none';
   }
@@ -933,7 +933,7 @@ function openPopup(ev, cal) {
   const descRow = document.getElementById('popup-description-row');
   if (ev.description) {
     descRow.style.display = '';
-    document.getElementById('popup-description').textContent = ev.description;
+    document.getElementById('popup-description').innerHTML = linkifyText(ev.description);
   } else {
     descRow.style.display = 'none';
   }
