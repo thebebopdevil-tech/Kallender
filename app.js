@@ -641,6 +641,23 @@ function bindUI() {
   document.getElementById('hamburger-btn').addEventListener('click', openSidebar);
   document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
   document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+
+  // Share button (Option A)
+  document.getElementById('sidebar-share-btn').addEventListener('click', copyShareLink);
+
+  // Export / Import config (Option B)
+  document.getElementById('sidebar-export-btn').addEventListener('click', exportConfig);
+
+  const configFileInput = document.getElementById('config-file-input');
+  document.getElementById('sidebar-import-config-btn').addEventListener('click', () => {
+    configFileInput.value = '';
+    configFileInput.click();
+  });
+  configFileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) importConfigFile(file);
+    e.target.value = '';
+  });
 }
 
 // ── Scroll handling (infinite horizontal scroll) ──────────────────────────────
