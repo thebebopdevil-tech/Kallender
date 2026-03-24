@@ -196,6 +196,15 @@ function bindUI() {
     if (e.key === 'Escape') closePopup();
   });
 
+  // Weeks selector
+  const weeksSelect = document.getElementById('weeks-select');
+  weeksSelect.addEventListener('change', () => {
+    preferredWeeks = parseInt(weeksSelect.value, 10);
+    localStorage.setItem('kallendar_weeks', preferredWeeks);
+    renderWeek();
+  });
+  updateWeeksSelector(); // set initial value + disable out-of-range options
+
   // Mobile sidebar
   document.getElementById('hamburger-btn').addEventListener('click', openSidebar);
   document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
