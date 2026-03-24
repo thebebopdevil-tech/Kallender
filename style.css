@@ -981,11 +981,6 @@ body.drag-over #calendar-area::after {
     min-width: 0;
   }
 
-  /* Compact import button — show "＋ .ics" instead of full label */
-  .import-full    { display: none; }
-  .import-compact { display: inline; }
-  #import-btn { padding: 0 9px; font-size: 13px; }
-
   /* Weeks selector: slightly narrower so row 2 fits comfortably */
   #weeks-select { padding: 0 4px; }
 
