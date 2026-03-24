@@ -38,9 +38,27 @@ function isMobilePortrait() {
   return window.innerWidth < 768 && window.innerWidth < window.innerHeight;
 }
 
-/** Number of week columns to show (1 on mobile portrait, 5 otherwise) */
+/** Hard cap on week columns for the current viewport size */
+function getMobileCap() {
+  if (window.innerWidth >= 900) return 12;              // desktop — no cap
+  if (window.innerWidth < window.innerHeight) return 2; // portrait phone
+  return 4;                                             // landscape phone / small tablet
+}
+
+/** Effective week count — user preference capped by the current viewport */
 function getNumWeeks() {
-  return isMobilePortrait() ? 1 : 5;
+  return Math.min(preferredWeeks, getMobileCap());
+}
+
+/** Sync the select element: disable options above the cap, set displayed value */
+function updateWeeksSelector() {
+  const select = document.getElementById('weeks-select');
+  if (!select) return;
+  const cap = getMobileCap();
+  Array.from(select.options).forEach(opt => {
+    opt.disabled = parseInt(opt.value, 10) > cap;
+  });
+  select.value = String(getNumWeeks());
 }
 
 // ── Storage ───────────────────────────────────────────────────────────────────
