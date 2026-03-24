@@ -300,11 +300,16 @@ async function syncCalendar(cal) {
   renderCalendarList(); // show spinner
 
   try {
-    const res = await fetch(`${PROXY_URL}?url=${encodeURIComponent(cal.url)}`);
+    // cache:'no-store' prevents the browser from serving a cached response;
+    // the service worker is also patched to never cache /api/ paths.
+    const res = await fetch(
+      `${PROXY_URL}?url=${encodeURIComponent(cal.url)}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(15000) }
+    );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const icsText = await res.text();
 
-    cal.events = parseICS(icsText);
+    cal.events    = parseICS(icsText);
     cal.lastSynced = Date.now();
     cal.syncError  = false;
 
@@ -315,18 +320,24 @@ async function syncCalendar(cal) {
 
     saveToStorage();
     renderWeek();
+    console.log(`[Kallendar] Synced "${cal.name}" — ${cal.events.length} events`);
   } catch (err) {
     console.warn('[Kallendar] Sync failed:', cal.name || cal.url, err.message);
     cal.syncError = true;
     saveToStorage();
+    renderWeek(); // update grid even on failure so error state is reflected
+  } finally {
+    // always clear the lock and refresh the sidebar, even if an unexpected
+    // exception fires — prevents syncingIds from getting permanently stuck
+    syncingIds.delete(cal.id);
+    renderCalendarList();
   }
-
-  syncingIds.delete(cal.id);
-  renderCalendarList(); // update spinner → result
 }
 
 function syncAllSubscribed() {
-  calendars.filter(c => c.url).forEach(syncCalendar);
+  const subs = calendars.filter(c => c.url);
+  console.log(`[Kallendar] Auto-sync tick — ${subs.length} subscribed calendar(s)`);
+  subs.forEach(syncCalendar);
 }
 
 function formatLastSynced(ts) {
