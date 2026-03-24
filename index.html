@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kallender</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Top bar -->
+    <header id="top-bar">
+      <span class="app-logo">Kallen<span>der</span></span>
+
+      <div class="nav-group">
+        <button id="prev-week" class="nav-btn" title="Previous week" aria-label="Previous week">&#8249;</button>
+        <button id="today-btn" class="nav-btn" title="Go to today">Today</button>
+        <button id="next-week" class="nav-btn" title="Next week" aria-label="Next week">&#8250;</button>
+      </div>
+
+      <span id="week-range"></span>
+
+      <div class="search-wrap">
+        <span class="search-icon">&#128269;</span>
+        <input type="search" id="search-input" placeholder="Search events…" autocomplete="off" />
+        <button id="search-clear" title="Clear search" aria-label="Clear search">&#10005;</button>
+      </div>
+
+      <div class="header-actions">
+        <button id="theme-toggle" class="icon-btn" title="Toggle dark mode" aria-label="Switch to dark mode">☀</button>
+        <input type="file" id="file-input" accept=".ics,text/calendar" multiple hidden />
+        <button id="import-btn">+ Import .ics</button>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <div id="main">
+
+      <!-- Sidebar: calendar list -->
+      <aside id="sidebar">
+        <div class="sidebar-title">Calendars</div>
+        <ul id="calendar-list"></ul>
+      </aside>
+
+      <!-- Calendar area -->
+      <div id="calendar-area">
+        <div id="week-grid">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+
+    </div><!-- #main -->
+
+  </div><!-- #app -->
+
+  <!-- Event detail popup -->
+  <div id="event-popup-overlay" role="presentation"></div>
+  <div id="event-popup" role="dialog" aria-modal="true" aria-labelledby="popup-title">
+    <div class="popup-header">
+      <h2 id="popup-title"></h2>
+      <button id="popup-close" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="popup-cal-row">
+      <span id="popup-cal-dot"></span>
+      <span id="popup-cal-name"></span>
+    </div>
+    <div class="popup-body">
+      <div class="popup-row">
+        <span class="popup-icon">&#128337;</span>
+        <span class="popup-field" id="popup-time"></span>
+      </div>
+      <div class="popup-row" id="popup-location-row">
+        <span class="popup-icon">&#128205;</span>
+        <span class="popup-field" id="popup-location"></span>
+      </div>
+      <div class="popup-row" id="popup-description-row">
+        <span class="popup-icon">&#128221;</span>
+        <span class="popup-field desc" id="popup-description"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="ical-parser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
