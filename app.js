@@ -1,6 +1,7 @@
 /**
  * app.js — Kallender
- * Planner-style calendar viewer for .ics files. No backend, no frameworks.
+ * Planner-style calendar viewer for .ics files.
+ * No backend, no frameworks — plain vanilla JS.
  */
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -23,7 +24,20 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCalendarList();
   renderWeek();
   bindUI();
+  bindResize();
 });
+
+// ── Mobile helpers ────────────────────────────────────────────────────────────
+
+/** True when we're on a portrait-orientation phone/narrow device */
+function isMobilePortrait() {
+  return window.innerWidth < 768 && window.innerWidth < window.innerHeight;
+}
+
+/** Number of week columns to show (1 on mobile portrait, 5 otherwise) */
+function getNumWeeks() {
+  return isMobilePortrait() ? 1 : 5;
+}
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 
@@ -60,21 +74,39 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('kallender_theme', theme);
   const btn = document.getElementById('theme-toggle');
-  if (btn) btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  if (btn) {
+    btn.textContent = theme === 'dark' ? '☀' : '☾';
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+}
+
+// ── Sidebar drawer (mobile) ───────────────────────────────────────────────────
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+  document.body.style.overflow = '';
 }
 
 // ── UI Bindings ───────────────────────────────────────────────────────────────
 
 function bindUI() {
+  // File import
   document.getElementById('file-input').addEventListener('change', e => {
     handleFiles(Array.from(e.target.files));
     e.target.value = '';
   });
-
   document.getElementById('import-btn').addEventListener('click', () => {
     document.getElementById('file-input').click();
   });
 
+  // Drag-and-drop
   const dropZone = document.getElementById('app');
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();
@@ -94,13 +126,13 @@ function bindUI() {
     if (files.length) handleFiles(files);
   });
 
-  // Navigation moves 5 weeks at a time
+  // Navigation — step by 1 week on mobile portrait, 5 weeks on desktop
   document.getElementById('prev-week').addEventListener('click', () => {
-    currentWeekStart = addDays(currentWeekStart, -35);
+    currentWeekStart = addDays(currentWeekStart, -7 * getNumWeeks());
     renderWeek();
   });
   document.getElementById('next-week').addEventListener('click', () => {
-    currentWeekStart = addDays(currentWeekStart, 35);
+    currentWeekStart = addDays(currentWeekStart, 7 * getNumWeeks());
     renderWeek();
   });
   document.getElementById('today-btn').addEventListener('click', () => {
@@ -108,11 +140,13 @@ function bindUI() {
     renderWeek();
   });
 
+  // Theme toggle
   document.getElementById('theme-toggle').addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
     applyTheme(current === 'dark' ? 'light' : 'dark');
   });
 
+  // Search
   const searchInput = document.getElementById('search-input');
   searchInput.addEventListener('input', () => {
     searchQuery = searchInput.value.trim().toLowerCase();
@@ -126,10 +160,57 @@ function bindUI() {
     renderWeek();
   });
 
+  // Popup
   document.getElementById('event-popup-overlay').addEventListener('click', closePopup);
   document.getElementById('popup-close').addEventListener('click', closePopup);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closePopup();
+  });
+
+  // Mobile sidebar
+  document.getElementById('hamburger-btn').addEventListener('click', openSidebar);
+  document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
+  document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+
+  // Swipe to navigate weeks (mobile portrait only)
+  bindSwipe();
+}
+
+// ── Swipe detection ───────────────────────────────────────────────────────────
+
+function bindSwipe() {
+  const grid = document.getElementById('week-grid');
+  let startX = 0;
+  let startY = 0;
+
+  grid.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  grid.addEventListener('touchend', e => {
+    if (!isMobilePortrait()) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    // Horizontal swipe > 50px and more horizontal than vertical
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      currentWeekStart = addDays(currentWeekStart, dx < 0 ? 7 : -7);
+      renderWeek();
+    }
+  }, { passive: true });
+}
+
+// ── Resize / orientation change ───────────────────────────────────────────────
+
+function bindResize() {
+  let lastNumWeeks = getNumWeeks();
+  window.addEventListener('resize', () => {
+    const now = getNumWeeks();
+    if (now !== lastNumWeeks) {
+      lastNumWeeks = now;
+      // When switching to desktop, snap currentWeekStart to stay in view
+      renderWeek();
+    }
   });
 }
 
@@ -210,12 +291,20 @@ function renderWeek() {
 }
 
 function updateWeekHeader() {
-  const weekEnd = addDays(currentWeekStart, 34);
+  const numWeeks = getNumWeeks();
+  const weekEnd = addDays(currentWeekStart, numWeeks * 7 - 1);
   const startWeek = getISOWeekNumber(currentWeekStart);
   const endWeek = getISOWeekNumber(weekEnd);
   const yearStr = currentWeekStart.getFullYear() !== new Date().getFullYear()
     ? ` ${currentWeekStart.getFullYear()}` : '';
-  document.getElementById('week-range').textContent = `Week ${startWeek}–${endWeek}${yearStr}`;
+
+  let label;
+  if (numWeeks === 1 || startWeek === endWeek) {
+    label = `Week ${startWeek}${yearStr}`;
+  } else {
+    label = `Week ${startWeek}–${endWeek}${yearStr}`;
+  }
+  document.getElementById('week-range').textContent = label;
 }
 
 function renderGrid() {
@@ -225,21 +314,28 @@ function renderGrid() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const numWeeks = getNumWeeks();
+
+  // Adaptive label column width
+  const labelW = window.innerWidth < 768 ? '52px' : '68px';
+
   const planner = document.createElement('div');
   planner.className = 'planner-grid';
+  planner.style.gridTemplateColumns = `${labelW} repeat(${numWeeks}, 1fr)`;
+  if (numWeeks > 1) planner.style.minWidth = '500px';
 
-  // Corner (top-left)
+  // ── Corner (top-left) ──
   const corner = document.createElement('div');
   corner.className = 'planner-corner';
   planner.appendChild(corner);
 
-  // 5 week header cells
-  for (let w = 0; w < 5; w++) {
+  // ── Week header cells ──
+  for (let w = 0; w < numWeeks; w++) {
     const wkStart = addDays(currentWeekStart, w * 7);
     const wkEnd = addDays(wkStart, 6);
     const wkNum = getISOWeekNumber(wkStart);
     const cell = document.createElement('div');
-    cell.className = 'planner-week-header';
+    cell.className = 'planner-week-header' + (w === numWeeks - 1 ? ' last-header' : '');
     cell.innerHTML = `
       <span class="wh-num">Week ${wkNum}</span>
       <span class="wh-range">${formatShortRange(wkStart, wkEnd)}</span>
@@ -247,7 +343,7 @@ function renderGrid() {
     planner.appendChild(cell);
   }
 
-  // 7 day rows
+  // ── 7 day rows ──
   for (let d = 0; d < 7; d++) {
     // Day label (sticky left)
     const label = document.createElement('div');
@@ -255,16 +351,19 @@ function renderGrid() {
     label.textContent = DAY_NAMES[d];
     planner.appendChild(label);
 
-    // 5 cells for this day across weeks
-    for (let w = 0; w < 5; w++) {
+    // Week cells for this day
+    for (let w = 0; w < numWeeks; w++) {
       const date = addDays(currentWeekStart, w * 7 + d);
       const isToday = date.getTime() === today.getTime();
       const isWeekend = d >= 5;
 
       const cell = document.createElement('div');
-      cell.className = 'planner-cell'
-        + (isToday ? ' today' : '')
-        + (isWeekend ? ' weekend' : '');
+      cell.className = [
+        'planner-cell',
+        isToday   ? 'today'    : '',
+        isWeekend ? 'weekend'  : '',
+        w === numWeeks - 1 ? 'last-col' : '',
+      ].filter(Boolean).join(' ');
 
       // Date number
       const dateNum = document.createElement('span');
@@ -273,8 +372,7 @@ function renderGrid() {
       cell.appendChild(dateNum);
 
       // Event pills
-      const dayEvents = getEventsForDay(date);
-      dayEvents.forEach(({ event: ev, cal }) => {
+      getEventsForDay(date).forEach(({ event: ev, cal }) => {
         cell.appendChild(createEventPill(ev, cal));
       });
 
@@ -320,9 +418,6 @@ function createEventPill(ev, cal) {
 
 function openPopup(ev, cal) {
   activePopupEvent = ev;
-  const overlay = document.getElementById('event-popup-overlay');
-  const popup = document.getElementById('event-popup');
-
   document.getElementById('popup-title').textContent = ev.title || '(No title)';
   document.getElementById('popup-cal-name').textContent = cal.name;
   document.getElementById('popup-cal-dot').style.background = cal.color;
@@ -348,8 +443,8 @@ function openPopup(ev, cal) {
     descRow.style.display = 'none';
   }
 
-  overlay.classList.add('active');
-  popup.classList.add('active');
+  document.getElementById('event-popup-overlay').classList.add('active');
+  document.getElementById('event-popup').classList.add('active');
   document.getElementById('popup-close').focus();
 }
 
@@ -394,8 +489,8 @@ function formatTime(date) {
 }
 
 function formatDateTime(date) {
-  return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) +
-    ' ' + formatTime(date);
+  return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+    + ' ' + formatTime(date);
 }
 
 function formatShortRange(start, end) {
