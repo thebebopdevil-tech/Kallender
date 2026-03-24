@@ -218,12 +218,18 @@ function renderWeek() {
 }
 
 function updateWeekHeader() {
-  const weekEnd = addDays(currentWeekStart, 6);
-  const fmt = d => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const weekNum = getISOWeekNumber(currentWeekStart);
   const yearStr = currentWeekStart.getFullYear() !== new Date().getFullYear()
     ? ` ${currentWeekStart.getFullYear()}` : '';
-  document.getElementById('week-range').textContent =
-    `${fmt(currentWeekStart)} – ${fmt(weekEnd)}${yearStr}`;
+  document.getElementById('week-range').textContent = `Week ${weekNum}${yearStr}`;
+}
+
+function getISOWeekNumber(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
 function renderGrid() {
