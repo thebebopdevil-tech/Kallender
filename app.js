@@ -526,9 +526,6 @@ function bindUI() {
     openSubscribeDialog();
   });
 
-  // Click outside import menu → close it
-  document.addEventListener('click', () => closeImportMenu());
-
   // Drag-and-drop onto app area
   const dropZone = document.getElementById('app');
   dropZone.addEventListener('dragover', e => {
