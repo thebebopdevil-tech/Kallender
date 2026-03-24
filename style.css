@@ -124,6 +124,29 @@ input {
 #today-btn:hover { background: var(--surface-2); }
 
 /* Weeks selector */
+.weeks-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s, background-color .15s;
+}
+.weeks-wrap:hover { background: var(--surface); border-color: var(--text-2); }
+
+.weeks-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+  user-select: none;
+}
+
 #weeks-select {
   height: 32px;
   padding: 0 24px 0 9px;
