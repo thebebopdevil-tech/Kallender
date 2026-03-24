@@ -232,7 +232,8 @@ function bindSwipe() {
     const dy = e.changedTouches[0].clientY - startY;
     // Horizontal swipe > 50px and more horizontal than vertical
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      currentWeekStart = addDays(currentWeekStart, dx < 0 ? 7 : -7);
+      const step = 7 * getNumWeeks();
+      currentWeekStart = addDays(currentWeekStart, dx < 0 ? step : -step);
       renderWeek();
     }
   }, { passive: true });
