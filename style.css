@@ -220,39 +220,6 @@ input {
   margin-left: auto;
 }
 
-/* ── Import dropdown menu ─────────────────────────────────────────────────── */
-.import-wrap {
-  position: relative;
-}
-
-.import-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  min-width: 190px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: var(--shadow-popup);
-  overflow: hidden;
-  z-index: 200;
-  /* hidden/shown via the `hidden` attribute */
-}
-
-.import-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 11px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  text-align: left;
-  transition: background .1s;
-}
-.import-menu-item:hover { background: var(--surface-2); }
-
 .icon-btn {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px;
