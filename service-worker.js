@@ -10,7 +10,7 @@
  * Bump CACHE_VERSION whenever you want all clients to refetch everything.
  */
 
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE = `kallendar-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
