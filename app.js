@@ -4,25 +4,44 @@
  * No backend, no frameworks — plain vanilla JS.
  */
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const PALETTE = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
 ];
 
-const WEEK_OPTIONS  = [1, 2, 3, 4, 5, 6, 8, 10, 12];
-const DEFAULT_WEEKS = 5;
-const BUFFER_WEEKS  = 12; // extra weeks rendered on each side of the visible range
+const WEEK_OPTIONS      = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+const DEFAULT_WEEKS     = 5;
+const BUFFER_WEEKS      = 12;
+const PROXY_URL         = '/api/proxy';
+const SYNC_INTERVAL_MS  = 30 * 60 * 1000; // 30 minutes
 
-let calendars      = [];
-let preferredWeeks = DEFAULT_WEEKS;
-let currentWeekStart = getWeekStart(new Date()); // leftmost visible week
-let renderedStart    = null;  // leftmost rendered week (= currentWeekStart - BUFFER)
-let colWidth         = 160;   // pixel width of one week column (recalculated on render)
+// SVG icon strings ─────────────────────────────────────────────────────────────
+
+const SVG_SUN = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+
+const SVG_MOON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+
+const SVG_REFRESH = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`;
+
+const SVG_SPINNER = `<svg class="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 2a10 10 0 0 1 10 10"/></svg>`;
+
+const SVG_WARN = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let calendars        = [];
+let preferredWeeks   = DEFAULT_WEEKS;
+let currentWeekStart = getWeekStart(new Date());
+let renderedStart    = null;
+let colWidth         = 160;
 let searchQuery      = '';
 let activePopupEvent = null;
-let _suppressScroll  = false; // ignore scroll events fired by programmatic scrollLeft changes
+let _suppressScroll  = false;
+
+const syncingIds     = new Set(); // cal ids currently being fetched
+let subSelectedColor = PALETTE[0]; // colour chosen in subscribe dialog
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -34,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
   bindScroll();
   bindResize();
   renderWeek();
+  // Sync all URL subscriptions on load, then every 30 min
+  syncAllSubscribed();
+  setInterval(syncAllSubscribed, SYNC_INTERVAL_MS);
 });
 
 // ── Mobile helpers ────────────────────────────────────────────────────────────
@@ -44,8 +66,8 @@ function isMobilePortrait() {
 
 function getMobileCap() {
   if (window.innerWidth >= 900) return 12;
-  if (window.innerWidth < window.innerHeight) return 2; // portrait phone
-  return 4;                                             // landscape phone / small tablet
+  if (window.innerWidth < window.innerHeight) return 2;
+  return 4;
 }
 
 function getNumWeeks() {
@@ -117,8 +139,10 @@ function applyTheme(theme) {
   localStorage.setItem('kallender_theme', theme);
   const btn = document.getElementById('theme-toggle');
   if (btn) {
-    btn.textContent = theme === 'dark' ? '☀' : '☾';
+    // Use SVG icons so size & color are consistent on all screen sizes
+    btn.innerHTML = theme === 'dark' ? SVG_SUN : SVG_MOON;
     btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.title = btn.getAttribute('aria-label');
   }
 }
 
@@ -136,28 +160,225 @@ function closeSidebar() {
   document.body.style.overflow = '';
 }
 
+// ── Import menu dropdown ──────────────────────────────────────────────────────
+
+function openImportMenu() {
+  const menu = document.getElementById('import-menu');
+  const btn  = document.getElementById('import-btn');
+  menu.hidden = false;
+  btn.setAttribute('aria-expanded', 'true');
+}
+
+function closeImportMenu() {
+  const menu = document.getElementById('import-menu');
+  const btn  = document.getElementById('import-btn');
+  if (!menu) return;
+  menu.hidden = true;
+  btn.setAttribute('aria-expanded', 'false');
+}
+
+function toggleImportMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('import-menu');
+  if (menu.hidden) openImportMenu();
+  else closeImportMenu();
+}
+
+// ── Subscribe dialog ──────────────────────────────────────────────────────────
+
+function openSubscribeDialog() {
+  // Pick the next palette colour as default
+  subSelectedColor = PALETTE[calendars.length % PALETTE.length];
+
+  // Reset form
+  document.getElementById('sub-url').value  = '';
+  document.getElementById('sub-name').value = '';
+  document.getElementById('sub-url-err').textContent = '';
+  document.getElementById('sub-btn-label').textContent = 'Subscribe';
+  document.getElementById('sub-submit').disabled = false;
+  renderColorPicker();
+
+  document.getElementById('subscribe-overlay').classList.add('active');
+  document.getElementById('subscribe-dialog').classList.add('active');
+  document.getElementById('sub-url').focus();
+}
+
+function closeSubscribeDialog() {
+  document.getElementById('subscribe-overlay').classList.remove('active');
+  document.getElementById('subscribe-dialog').classList.remove('active');
+}
+
+function renderColorPicker() {
+  const wrap = document.getElementById('sub-colors');
+  if (!wrap) return;
+  wrap.innerHTML = PALETTE.map(c => `
+    <button type="button"
+            class="color-swatch${c === subSelectedColor ? ' selected' : ''}"
+            style="--c:${c}"
+            data-color="${c}"
+            aria-label="Colour ${c}"
+            aria-pressed="${c === subSelectedColor}">
+    </button>
+  `).join('');
+  wrap.querySelectorAll('.color-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      subSelectedColor = btn.dataset.color;
+      renderColorPicker();
+    });
+  });
+}
+
+function normalizeCalURL(url) {
+  // webcal:// → https:// for CORS-proxy fetching
+  return url.trim().replace(/^webcal:\/\//i, 'https://');
+}
+
+function extractCalName(icsText) {
+  const m = icsText.match(/^X-WR-CALNAME:(.+)$/m);
+  return m ? m[1].trim() : null;
+}
+
+function submitSubscription() {
+  const urlInput  = document.getElementById('sub-url');
+  const nameInput = document.getElementById('sub-name');
+  const errEl     = document.getElementById('sub-url-err');
+
+  let url = normalizeCalURL(urlInput.value);
+  errEl.textContent = '';
+
+  if (!url) {
+    errEl.textContent = 'Please enter an iCal URL.';
+    urlInput.focus();
+    return;
+  }
+
+  try { new URL(url); }
+  catch {
+    errEl.textContent = 'That doesn\'t look like a valid URL.';
+    urlInput.focus();
+    return;
+  }
+
+  const protocol = new URL(url).protocol;
+  if (!['http:', 'https:'].includes(protocol)) {
+    errEl.textContent = 'Only http:// and https:// (or webcal://) URLs are supported.';
+    urlInput.focus();
+    return;
+  }
+
+  const name = nameInput.value.trim();
+  const id   = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  const cal  = {
+    id,
+    name: name || '',   // blank → auto-detected from X-WR-CALNAME during sync
+    color: subSelectedColor,
+    events: [],
+    visible: true,
+    type: 'url',
+    url,
+    lastSynced: null,
+    syncError: false,
+  };
+
+  calendars.push(cal);
+  saveToStorage();
+  renderCalendarList();
+  renderWeek();
+  closeSubscribeDialog();
+
+  // Sync immediately in the background
+  syncCalendar(cal);
+}
+
+// ── URL subscription sync ─────────────────────────────────────────────────────
+
+async function syncCalendar(cal) {
+  if (!cal.url || syncingIds.has(cal.id)) return;
+
+  syncingIds.add(cal.id);
+  renderCalendarList(); // show spinner
+
+  try {
+    const res = await fetch(`${PROXY_URL}?url=${encodeURIComponent(cal.url)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const icsText = await res.text();
+
+    cal.events = parseICS(icsText);
+    cal.lastSynced = Date.now();
+    cal.syncError  = false;
+
+    // Auto-detect name from calendar data if the user left it blank
+    if (!cal.name) {
+      cal.name = extractCalName(icsText) || new URL(cal.url).hostname;
+    }
+
+    saveToStorage();
+    renderWeek();
+  } catch (err) {
+    console.warn('[Kallendar] Sync failed:', cal.name || cal.url, err.message);
+    cal.syncError = true;
+    saveToStorage();
+  }
+
+  syncingIds.delete(cal.id);
+  renderCalendarList(); // update spinner → result
+}
+
+function syncAllSubscribed() {
+  calendars.filter(c => c.url).forEach(syncCalendar);
+}
+
+function formatLastSynced(ts) {
+  if (!ts) return 'Never synced';
+  const diff = Date.now() - ts;
+  if (diff < 60_000)        return 'Just now';
+  if (diff < 3_600_000)     return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000)    return `${Math.floor(diff / 3_600_000)}h ago`;
+  return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
 // ── UI Bindings ───────────────────────────────────────────────────────────────
 
 function bindUI() {
-  // File import
+  // File import via file-input
   document.getElementById('file-input').addEventListener('change', e => {
     handleFiles(Array.from(e.target.files));
     e.target.value = '';
   });
-  document.getElementById('import-btn').addEventListener('click', () => {
+
+  // Header import button → dropdown menu
+  document.getElementById('import-btn').addEventListener('click', toggleImportMenu);
+  document.getElementById('import-file-item').addEventListener('click', () => {
+    closeImportMenu();
     document.getElementById('file-input').click();
   });
+  document.getElementById('import-url-item').addEventListener('click', () => {
+    closeImportMenu();
+    openSubscribeDialog();
+  });
 
-  // Drag-and-drop
+  // Sidebar footer buttons
+  document.getElementById('sidebar-import-file-btn').addEventListener('click', () => {
+    closeSidebar();
+    document.getElementById('file-input').click();
+  });
+  document.getElementById('sidebar-subscribe-btn').addEventListener('click', () => {
+    closeSidebar();
+    openSubscribeDialog();
+  });
+
+  // Click outside import menu → close it
+  document.addEventListener('click', () => closeImportMenu());
+
+  // Drag-and-drop onto app area
   const dropZone = document.getElementById('app');
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();
     document.body.classList.add('drag-over');
   });
   dropZone.addEventListener('dragleave', e => {
-    if (!e.relatedTarget || e.relatedTarget === document.body) {
+    if (!e.relatedTarget || e.relatedTarget === document.body)
       document.body.classList.remove('drag-over');
-    }
   });
   dropZone.addEventListener('drop', e => {
     e.preventDefault();
@@ -168,7 +389,7 @@ function bindUI() {
     if (files.length) handleFiles(files);
   });
 
-  // Navigation arrows — jump by visible week count
+  // Navigation arrows
   document.getElementById('prev-week').addEventListener('click', () => {
     currentWeekStart = addDays(currentWeekStart, -7 * getNumWeeks());
     renderWeek();
@@ -202,10 +423,27 @@ function bindUI() {
     renderWeek();
   });
 
-  // Popup close
+  // Event popup close
   document.getElementById('event-popup-overlay').addEventListener('click', closePopup);
   document.getElementById('popup-close').addEventListener('click', closePopup);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopup(); });
+
+  // Subscribe dialog close
+  document.getElementById('subscribe-overlay').addEventListener('click', closeSubscribeDialog);
+  document.getElementById('subscribe-close').addEventListener('click', closeSubscribeDialog);
+  document.getElementById('sub-cancel').addEventListener('click', closeSubscribeDialog);
+  document.getElementById('sub-submit').addEventListener('click', submitSubscription);
+  document.getElementById('sub-url').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitSubscription();
+  });
+
+  // Escape key closes any open overlay
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closePopup();
+      closeSubscribeDialog();
+      closeImportMenu();
+    }
+  });
 
   // Weeks selector
   const weeksSelect = document.getElementById('weeks-select');
@@ -222,35 +460,29 @@ function bindUI() {
   document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
 }
 
-// ── Scroll handling (infinite horizontal scroll) ───────────────────────────────
+// ── Scroll handling (infinite horizontal scroll) ──────────────────────────────
 
 function bindScroll() {
   const grid = document.getElementById('week-grid');
 
-  // Native scroll — tracks position, updates header, re-centres buffer when needed
   grid.addEventListener('scroll', () => {
     if (_suppressScroll) return;
 
     const scrollLeft = grid.scrollLeft;
-
-    // Which week column is now at the left edge?
-    const weekIdx = Math.round(scrollLeft / colWidth);
-    const newStart = addDays(renderedStart, weekIdx * 7);
+    const weekIdx    = Math.round(scrollLeft / colWidth);
+    const newStart   = addDays(renderedStart, weekIdx * 7);
     if (!isSameDay(newStart, currentWeekStart)) {
       currentWeekStart = newStart;
       updateWeekHeader();
     }
 
-    // Re-centre the buffer when within 6 columns of either edge
-    const rightEdge  = grid.scrollWidth - grid.clientWidth;
-    const threshold  = 6 * colWidth;
+    const rightEdge = grid.scrollWidth - grid.clientWidth;
+    const threshold = 6 * colWidth;
     if (scrollLeft < threshold || scrollLeft > rightEdge - threshold) {
-      // currentWeekStart is already updated above — re-render centres on it
       renderGrid();
     }
   }, { passive: true });
 
-  // Shift + mouse-wheel → horizontal scroll (trackpad horizontal is already native)
   grid.addEventListener('wheel', e => {
     if (e.shiftKey && Math.abs(e.deltaY) > 0) {
       e.preventDefault();
@@ -262,12 +494,11 @@ function bindScroll() {
 // ── Resize / orientation change ───────────────────────────────────────────────
 
 function bindResize() {
-  let lastNumWeeks  = getNumWeeks();
+  let lastNumWeeks   = getNumWeeks();
   let lastInnerWidth = window.innerWidth;
-
   window.addEventListener('resize', () => {
     updateWeeksSelector();
-    const nowWeeks = getNumWeeks();
+    const nowWeeks     = getNumWeeks();
     const widthChanged = window.innerWidth !== lastInnerWidth;
     if (nowWeeks !== lastNumWeeks || widthChanged) {
       lastNumWeeks   = nowWeeks;
@@ -289,7 +520,7 @@ function handleFiles(files) {
         const id    = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
         const name  = file.name.replace(/\.ics$/i, '');
         const color = PALETTE[calendars.length % PALETTE.length];
-        calendars.push({ id, name, color, events, visible: true });
+        calendars.push({ id, name, color, events, visible: true, type: 'file' });
         loaded++;
         if (loaded === files.length) {
           saveToStorage();
@@ -311,20 +542,60 @@ function renderCalendarList() {
   list.innerHTML = '';
 
   if (calendars.length === 0) {
-    list.innerHTML = '<li class="cal-empty">No calendars yet.<br>Import an .ics file.</li>';
+    list.innerHTML = '<li class="cal-empty">No calendars yet.<br>Import a file or subscribe to a URL.</li>';
     return;
   }
 
   calendars.forEach(cal => {
+    const isSubscribed = !!cal.url;
+    const isSyncing    = syncingIds.has(cal.id);
+
     const li = document.createElement('li');
-    li.className = 'cal-item' + (cal.visible ? '' : ' cal-hidden');
-    li.innerHTML = `
-      <button class="cal-toggle" title="Toggle visibility" aria-pressed="${cal.visible}" style="--cal-color:${cal.color}">
-        <span class="cal-dot"></span>
-      </button>
-      <span class="cal-name" title="${escapeHtml(cal.name)}">${escapeHtml(cal.name)}</span>
-      <button class="cal-remove" title="Remove calendar" aria-label="Remove ${escapeHtml(cal.name)}">✕</button>
-    `;
+    li.className = [
+      'cal-item',
+      cal.visible   ? ''              : 'cal-hidden',
+      isSubscribed  ? 'cal-subscribed': '',
+    ].filter(Boolean).join(' ');
+
+    if (isSubscribed) {
+      const syncedText = cal.lastSynced
+        ? `Synced ${formatLastSynced(cal.lastSynced)}`
+        : 'Not yet synced';
+
+      li.innerHTML = `
+        <button class="cal-toggle" title="Toggle visibility" aria-pressed="${cal.visible}" style="--cal-color:${cal.color}">
+          <span class="cal-dot"></span>
+        </button>
+        <div class="cal-info">
+          <span class="cal-name" title="${escapeHtml(cal.name || cal.url)}">${escapeHtml(cal.name || '⋯')}</span>
+          <span class="cal-sync-meta${cal.syncError ? ' cal-sync-err' : ''}">
+            ${cal.syncError ? SVG_WARN : ''}
+            ${cal.syncError ? 'Sync failed' : syncedText}
+          </span>
+        </div>
+        <button class="cal-refresh${isSyncing ? ' is-syncing' : ''}"
+                title="${isSyncing ? 'Syncing…' : 'Refresh now'}"
+                aria-label="Refresh calendar"
+                ${isSyncing ? 'disabled' : ''}>
+          ${isSyncing ? SVG_SPINNER : SVG_REFRESH}
+        </button>
+        <button class="cal-remove" title="Remove calendar" aria-label="Remove ${escapeHtml(cal.name)}">&#10005;</button>
+      `;
+
+      li.querySelector('.cal-refresh').addEventListener('click', e => {
+        e.stopPropagation();
+        syncCalendar(cal);
+      });
+    } else {
+      li.innerHTML = `
+        <button class="cal-toggle" title="Toggle visibility" aria-pressed="${cal.visible}" style="--cal-color:${cal.color}">
+          <span class="cal-dot"></span>
+        </button>
+        <span class="cal-name" title="${escapeHtml(cal.name)}">${escapeHtml(cal.name)}</span>
+        <button class="cal-remove" title="Remove calendar" aria-label="Remove ${escapeHtml(cal.name)}">&#10005;</button>
+      `;
+    }
+
     li.querySelector('.cal-toggle').addEventListener('click', () => {
       cal.visible = !cal.visible;
       saveToStorage();
@@ -337,6 +608,7 @@ function renderCalendarList() {
       renderCalendarList();
       renderWeek();
     });
+
     list.appendChild(li);
   });
 }
@@ -370,23 +642,22 @@ function renderGrid() {
   today.setHours(0, 0, 0, 0);
 
   const numVisible = getNumWeeks();
-  const totalCols  = BUFFER_WEEKS + numVisible + BUFFER_WEEKS; // e.g. 12+5+12 = 29
+  const totalCols  = BUFFER_WEEKS + numVisible + BUFFER_WEEKS;
   renderedStart    = addDays(currentWeekStart, -BUFFER_WEEKS * 7);
   colWidth         = computeColWidth();
   const labelW     = getLabelWidth();
 
-  // ── Build grid ──
   const planner = document.createElement('div');
   planner.className = 'planner-grid';
   planner.style.gridTemplateColumns = `${labelW}px repeat(${totalCols}, ${colWidth}px)`;
   planner.style.width = `${labelW + totalCols * colWidth}px`;
 
-  // Corner (sticky top-left)
+  // Corner
   const corner = document.createElement('div');
   corner.className = 'planner-corner';
   planner.appendChild(corner);
 
-  // Week header cells (sticky top)
+  // Week header cells
   for (let w = 0; w < totalCols; w++) {
     const wkStart = addDays(renderedStart, w * 7);
     const wkEnd   = addDays(wkStart, 6);
@@ -399,13 +670,11 @@ function renderGrid() {
 
   // 7 day rows
   for (let d = 0; d < 7; d++) {
-    // Day label (sticky left)
     const label = document.createElement('div');
     label.className = 'planner-day-label' + (d >= 5 ? ' weekend' : '');
     label.textContent = DAY_NAMES[d];
     planner.appendChild(label);
 
-    // One cell per rendered week
     for (let w = 0; w < totalCols; w++) {
       const date      = addDays(renderedStart, w * 7 + d);
       const isToday   = date.getTime() === today.getTime();
@@ -414,8 +683,8 @@ function renderGrid() {
       const cell = document.createElement('div');
       cell.className = [
         'planner-cell',
-        isToday   ? 'today'    : '',
-        isWeekend ? 'weekend'  : '',
+        isToday   ? 'today'   : '',
+        isWeekend ? 'weekend' : '',
         w === totalCols - 1 ? 'last-col' : '',
       ].filter(Boolean).join(' ');
 
@@ -435,7 +704,6 @@ function renderGrid() {
   container.innerHTML = '';
   container.appendChild(planner);
 
-  // Position scroll so currentWeekStart is at the left edge
   _suppressScroll = true;
   container.scrollLeft = BUFFER_WEEKS * colWidth;
   setTimeout(() => { _suppressScroll = false; }, 50);
