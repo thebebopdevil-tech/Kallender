@@ -1,5 +1,5 @@
 /**
- * service-worker.js — Kallender
+ * service-worker.js — Kallendar
  * Caches all static assets for offline use.
  */
 
