@@ -11,14 +11,18 @@ const PALETTE = [
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
 ];
 
-const WEEK_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+const WEEK_OPTIONS  = [1, 2, 3, 4, 5, 6, 8, 10, 12];
 const DEFAULT_WEEKS = 5;
+const BUFFER_WEEKS  = 12; // extra weeks rendered on each side of the visible range
 
-let calendars = [];
-let preferredWeeks = DEFAULT_WEEKS; // user's chosen week count (saved to localStorage)
-let currentWeekStart = getWeekStart(new Date());
-let searchQuery = '';
+let calendars      = [];
+let preferredWeeks = DEFAULT_WEEKS;
+let currentWeekStart = getWeekStart(new Date()); // leftmost visible week
+let renderedStart    = null;  // leftmost rendered week (= currentWeekStart - BUFFER)
+let colWidth         = 160;   // pixel width of one week column (recalculated on render)
+let searchQuery      = '';
 let activePopupEvent = null;
+let _suppressScroll  = false; // ignore scroll events fired by programmatic scrollLeft changes
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -26,31 +30,28 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFromStorage();
   applyTheme(getSavedTheme());
   renderCalendarList();
-  bindUI();      // initialises weeks selector before first render
+  bindUI();
+  bindScroll();
   bindResize();
   renderWeek();
 });
 
 // ── Mobile helpers ────────────────────────────────────────────────────────────
 
-/** True when we're on a portrait-orientation phone/narrow device */
 function isMobilePortrait() {
   return window.innerWidth < 768 && window.innerWidth < window.innerHeight;
 }
 
-/** Hard cap on week columns for the current viewport size */
 function getMobileCap() {
-  if (window.innerWidth >= 900) return 12;              // desktop — no cap
+  if (window.innerWidth >= 900) return 12;
   if (window.innerWidth < window.innerHeight) return 2; // portrait phone
   return 4;                                             // landscape phone / small tablet
 }
 
-/** Effective week count — user preference capped by the current viewport */
 function getNumWeeks() {
   return Math.min(preferredWeeks, getMobileCap());
 }
 
-/** Sync the select element: disable options above the cap, set displayed value */
 function updateWeeksSelector() {
   const select = document.getElementById('weeks-select');
   if (!select) return;
@@ -59,6 +60,19 @@ function updateWeeksSelector() {
     opt.disabled = parseInt(opt.value, 10) > cap;
   });
   select.value = String(getNumWeeks());
+}
+
+// ── Column geometry ───────────────────────────────────────────────────────────
+
+function getLabelWidth() {
+  return window.innerWidth < 768 ? 52 : 68;
+}
+
+function computeColWidth() {
+  const grid = document.getElementById('week-grid');
+  if (!grid) return 160;
+  const available = grid.clientWidth - getLabelWidth();
+  return Math.max(100, Math.floor(available / getNumWeeks()));
 }
 
 // ── Storage ───────────────────────────────────────────────────────────────────
@@ -73,7 +87,7 @@ function loadFromStorage() {
         events: cal.events.map(ev => ({
           ...ev,
           start: new Date(ev.start),
-          end: new Date(ev.end),
+          end:   new Date(ev.end),
         })),
       }));
     }
@@ -81,7 +95,6 @@ function loadFromStorage() {
     calendars = [];
   }
 
-  // Load preferred week count
   const savedWeeks = localStorage.getItem('kallendar_weeks');
   if (savedWeeks) {
     const n = parseInt(savedWeeks, 10);
@@ -155,7 +168,7 @@ function bindUI() {
     if (files.length) handleFiles(files);
   });
 
-  // Navigation — step by 1 week on mobile portrait, 5 weeks on desktop
+  // Navigation arrows — jump by visible week count
   document.getElementById('prev-week').addEventListener('click', () => {
     currentWeekStart = addDays(currentWeekStart, -7 * getNumWeeks());
     renderWeek();
@@ -189,12 +202,10 @@ function bindUI() {
     renderWeek();
   });
 
-  // Popup
+  // Popup close
   document.getElementById('event-popup-overlay').addEventListener('click', closePopup);
   document.getElementById('popup-close').addEventListener('click', closePopup);
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closePopup();
-  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopup(); });
 
   // Weeks selector
   const weeksSelect = document.getElementById('weeks-select');
@@ -203,51 +214,64 @@ function bindUI() {
     localStorage.setItem('kallendar_weeks', preferredWeeks);
     renderWeek();
   });
-  updateWeeksSelector(); // set initial value + disable out-of-range options
+  updateWeeksSelector();
 
   // Mobile sidebar
   document.getElementById('hamburger-btn').addEventListener('click', openSidebar);
   document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
   document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
-
-  // Swipe to navigate weeks (mobile portrait only)
-  bindSwipe();
 }
 
-// ── Swipe detection ───────────────────────────────────────────────────────────
+// ── Scroll handling (infinite horizontal scroll) ───────────────────────────────
 
-function bindSwipe() {
+function bindScroll() {
   const grid = document.getElementById('week-grid');
-  let startX = 0;
-  let startY = 0;
 
-  grid.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  }, { passive: true });
+  // Native scroll — tracks position, updates header, re-centres buffer when needed
+  grid.addEventListener('scroll', () => {
+    if (_suppressScroll) return;
 
-  grid.addEventListener('touchend', e => {
-    if (!isMobilePortrait()) return;
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = e.changedTouches[0].clientY - startY;
-    // Horizontal swipe > 50px and more horizontal than vertical
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      const step = 7 * getNumWeeks();
-      currentWeekStart = addDays(currentWeekStart, dx < 0 ? step : -step);
-      renderWeek();
+    const scrollLeft = grid.scrollLeft;
+
+    // Which week column is now at the left edge?
+    const weekIdx = Math.round(scrollLeft / colWidth);
+    const newStart = addDays(renderedStart, weekIdx * 7);
+    if (!isSameDay(newStart, currentWeekStart)) {
+      currentWeekStart = newStart;
+      updateWeekHeader();
+    }
+
+    // Re-centre the buffer when within 6 columns of either edge
+    const rightEdge  = grid.scrollWidth - grid.clientWidth;
+    const threshold  = 6 * colWidth;
+    if (scrollLeft < threshold || scrollLeft > rightEdge - threshold) {
+      // currentWeekStart is already updated above — re-render centres on it
+      renderGrid();
     }
   }, { passive: true });
+
+  // Shift + mouse-wheel → horizontal scroll (trackpad horizontal is already native)
+  grid.addEventListener('wheel', e => {
+    if (e.shiftKey && Math.abs(e.deltaY) > 0) {
+      e.preventDefault();
+      grid.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
 }
 
 // ── Resize / orientation change ───────────────────────────────────────────────
 
 function bindResize() {
-  let lastNumWeeks = getNumWeeks();
+  let lastNumWeeks  = getNumWeeks();
+  let lastInnerWidth = window.innerWidth;
+
   window.addEventListener('resize', () => {
-    updateWeeksSelector(); // always keep select in sync with cap
-    const now = getNumWeeks();
-    if (now !== lastNumWeeks) {
-      lastNumWeeks = now;
+    updateWeeksSelector();
+    const nowWeeks = getNumWeeks();
+    const widthChanged = window.innerWidth !== lastInnerWidth;
+    if (nowWeeks !== lastNumWeeks || widthChanged) {
+      lastNumWeeks   = nowWeeks;
+      lastInnerWidth = window.innerWidth;
       renderWeek();
     }
   });
@@ -262,8 +286,8 @@ function handleFiles(files) {
     reader.onload = e => {
       try {
         const events = parseICS(e.target.result);
-        const id = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-        const name = file.name.replace(/\.ics$/i, '');
+        const id    = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        const name  = file.name.replace(/\.ics$/i, '');
         const color = PALETTE[calendars.length % PALETTE.length];
         calendars.push({ id, name, color, events, visible: true });
         loaded++;
@@ -301,21 +325,18 @@ function renderCalendarList() {
       <span class="cal-name" title="${escapeHtml(cal.name)}">${escapeHtml(cal.name)}</span>
       <button class="cal-remove" title="Remove calendar" aria-label="Remove ${escapeHtml(cal.name)}">✕</button>
     `;
-
     li.querySelector('.cal-toggle').addEventListener('click', () => {
       cal.visible = !cal.visible;
       saveToStorage();
       renderCalendarList();
       renderWeek();
     });
-
     li.querySelector('.cal-remove').addEventListener('click', () => {
       calendars = calendars.filter(c => c.id !== cal.id);
       saveToStorage();
       renderCalendarList();
       renderWeek();
     });
-
     list.appendChild(li);
   });
 }
@@ -330,59 +351,53 @@ function renderWeek() {
 }
 
 function updateWeekHeader() {
-  const numWeeks = getNumWeeks();
-  const weekEnd = addDays(currentWeekStart, numWeeks * 7 - 1);
+  const numWeeks  = getNumWeeks();
+  const weekEnd   = addDays(currentWeekStart, numWeeks * 7 - 1);
   const startWeek = getISOWeekNumber(currentWeekStart);
-  const endWeek = getISOWeekNumber(weekEnd);
-  const yearStr = currentWeekStart.getFullYear() !== new Date().getFullYear()
+  const endWeek   = getISOWeekNumber(weekEnd);
+  const yearStr   = currentWeekStart.getFullYear() !== new Date().getFullYear()
     ? ` ${currentWeekStart.getFullYear()}` : '';
 
-  let label;
-  if (numWeeks === 1 || startWeek === endWeek) {
-    label = `Week ${startWeek}${yearStr}`;
-  } else {
-    label = `Week ${startWeek}–${endWeek}${yearStr}`;
-  }
-  document.getElementById('week-range').textContent = label;
+  document.getElementById('week-range').textContent =
+    (numWeeks === 1 || startWeek === endWeek)
+      ? `Week ${startWeek}${yearStr}`
+      : `Week ${startWeek}–${endWeek}${yearStr}`;
 }
 
 function renderGrid() {
-  const container = document.getElementById('week-grid');
-  container.innerHTML = '';
-
-  const today = new Date();
+  const container  = document.getElementById('week-grid');
+  const today      = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const numWeeks = getNumWeeks();
+  const numVisible = getNumWeeks();
+  const totalCols  = BUFFER_WEEKS + numVisible + BUFFER_WEEKS; // e.g. 12+5+12 = 29
+  renderedStart    = addDays(currentWeekStart, -BUFFER_WEEKS * 7);
+  colWidth         = computeColWidth();
+  const labelW     = getLabelWidth();
 
-  // Adaptive label column width
-  const labelW = window.innerWidth < 768 ? '52px' : '68px';
-
+  // ── Build grid ──
   const planner = document.createElement('div');
   planner.className = 'planner-grid';
-  planner.style.gridTemplateColumns = `${labelW} repeat(${numWeeks}, 1fr)`;
-  if (numWeeks > 1) planner.style.minWidth = '500px';
+  planner.style.gridTemplateColumns = `${labelW}px repeat(${totalCols}, ${colWidth}px)`;
+  planner.style.width = `${labelW + totalCols * colWidth}px`;
 
-  // ── Corner (top-left) ──
+  // Corner (sticky top-left)
   const corner = document.createElement('div');
   corner.className = 'planner-corner';
   planner.appendChild(corner);
 
-  // ── Week header cells ──
-  for (let w = 0; w < numWeeks; w++) {
-    const wkStart = addDays(currentWeekStart, w * 7);
-    const wkEnd = addDays(wkStart, 6);
-    const wkNum = getISOWeekNumber(wkStart);
-    const cell = document.createElement('div');
-    cell.className = 'planner-week-header' + (w === numWeeks - 1 ? ' last-header' : '');
-    cell.innerHTML = `
-      <span class="wh-num">Week ${wkNum}</span>
-      <span class="wh-range">${formatShortRange(wkStart, wkEnd)}</span>
-    `;
+  // Week header cells (sticky top)
+  for (let w = 0; w < totalCols; w++) {
+    const wkStart = addDays(renderedStart, w * 7);
+    const wkEnd   = addDays(wkStart, 6);
+    const wkNum   = getISOWeekNumber(wkStart);
+    const cell    = document.createElement('div');
+    cell.className = 'planner-week-header' + (w === totalCols - 1 ? ' last-header' : '');
+    cell.innerHTML = `<span class="wh-num">Week ${wkNum}</span><span class="wh-range">${formatShortRange(wkStart, wkEnd)}</span>`;
     planner.appendChild(cell);
   }
 
-  // ── 7 day rows ──
+  // 7 day rows
   for (let d = 0; d < 7; d++) {
     // Day label (sticky left)
     const label = document.createElement('div');
@@ -390,10 +405,10 @@ function renderGrid() {
     label.textContent = DAY_NAMES[d];
     planner.appendChild(label);
 
-    // Week cells for this day
-    for (let w = 0; w < numWeeks; w++) {
-      const date = addDays(currentWeekStart, w * 7 + d);
-      const isToday = date.getTime() === today.getTime();
+    // One cell per rendered week
+    for (let w = 0; w < totalCols; w++) {
+      const date      = addDays(renderedStart, w * 7 + d);
+      const isToday   = date.getTime() === today.getTime();
       const isWeekend = d >= 5;
 
       const cell = document.createElement('div');
@@ -401,16 +416,14 @@ function renderGrid() {
         'planner-cell',
         isToday   ? 'today'    : '',
         isWeekend ? 'weekend'  : '',
-        w === numWeeks - 1 ? 'last-col' : '',
+        w === totalCols - 1 ? 'last-col' : '',
       ].filter(Boolean).join(' ');
 
-      // Date number
       const dateNum = document.createElement('span');
       dateNum.className = 'cell-date' + (isToday ? ' today' : '');
       dateNum.textContent = date.getDate();
       cell.appendChild(dateNum);
 
-      // Event pills
       getEventsForDay(date).forEach(({ event: ev, cal }) => {
         cell.appendChild(createEventPill(ev, cal));
       });
@@ -419,7 +432,13 @@ function renderGrid() {
     }
   }
 
+  container.innerHTML = '';
   container.appendChild(planner);
+
+  // Position scroll so currentWeekStart is at the left edge
+  _suppressScroll = true;
+  container.scrollLeft = BUFFER_WEEKS * colWidth;
+  setTimeout(() => { _suppressScroll = false; }, 50);
 }
 
 function getEventsForDay(date) {
@@ -445,11 +464,8 @@ function createEventPill(ev, cal) {
   pill.className = 'event-pill';
   pill.style.cssText = `background:${hexToRgba(cal.color, 0.18)};border-left:3px solid ${cal.color};`;
   pill.textContent = ev.title || '(No title)';
-  pill.title = ev.title || '(No title)';
-  pill.addEventListener('click', e => {
-    e.stopPropagation();
-    openPopup(ev, cal);
-  });
+  pill.title       = ev.title || '(No title)';
+  pill.addEventListener('click', e => { e.stopPropagation(); openPopup(ev, cal); });
   return pill;
 }
 
@@ -457,12 +473,12 @@ function createEventPill(ev, cal) {
 
 function openPopup(ev, cal) {
   activePopupEvent = ev;
-  document.getElementById('popup-title').textContent = ev.title || '(No title)';
+  document.getElementById('popup-title').textContent    = ev.title || '(No title)';
   document.getElementById('popup-cal-name').textContent = cal.name;
   document.getElementById('popup-cal-dot').style.background = cal.color;
 
   const startStr = formatDateTime(ev.start);
-  const endStr = ev.end ? formatDateTime(ev.end) : '';
+  const endStr   = ev.end ? formatDateTime(ev.end) : '';
   document.getElementById('popup-time').textContent =
     endStr ? `${startStr} – ${endStr}` : startStr;
 
@@ -498,8 +514,7 @@ function closePopup() {
 function getWeekStart(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  const offset = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - offset);
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7);
   return d;
 }
 
@@ -520,7 +535,7 @@ function addDays(date, n) {
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
+    a.getDate()  === b.getDate();
 }
 
 function formatTime(date) {
@@ -533,10 +548,10 @@ function formatDateTime(date) {
 }
 
 function formatShortRange(start, end) {
-  const s = start.getDate();
-  const e = end.getDate();
+  const s  = start.getDate();
+  const e  = end.getDate();
   const sm = start.toLocaleDateString(undefined, { month: 'short' });
-  const em = end.toLocaleDateString(undefined, { month: 'short' });
+  const em = end.toLocaleDateString(undefined,   { month: 'short' });
   return sm === em ? `${s}–${e} ${sm}` : `${s} ${sm}–${e} ${em}`;
 }
 
