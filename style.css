@@ -693,37 +693,72 @@ body.drag-over #calendar-area::after {
   #calendar-area { width: 100%; }
 }
 
-/* ── Mobile portrait: single-week column, compact header ────────────────────── */
+/* ── Mobile portrait: two-row header ─────────────────────────────────────────
+   Row 1 → hamburger · logo · nav arrows · [spacer] · theme toggle · import
+   Row 2 → week range · weeks selector · search (fills remaining width)      */
 @media (max-width: 767px) and (orientation: portrait) {
+
+  /* Stack the two rows vertically */
   #top-bar {
-    flex-wrap: nowrap;
-    gap: 6px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
     padding: 6px 10px;
   }
 
-  /* Hide the "Week N–N" label — it's in the grid header already */
-  #week-range { display: none; }
-
-  /* Shrink search */
-  .search-wrap {
-    min-width: 70px;
-    max-width: 140px;
+  /* Row 1: real flex row */
+  .hdr-r1 {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
   }
 
-  /* Hide ".ics" text from import button */
-  .import-label { display: none; }
-
-  #import-btn {
-    padding: 0 10px;
-    font-size: 13px;
+  /* Row 2: real flex row */
+  .hdr-r2 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
   }
 
-  /* Bigger touch targets */
-  .nav-btn  { width: 44px; height: 44px; }
+  /* header-actions is the last child of .hdr-r1; auto left margin
+     pushes it to the far right of that row */
+  .header-actions {
+    order: 0;           /* reset — just use DOM order within .hdr-r1 */
+    margin-left: auto;
+    gap: 4px;
+  }
+
+  /* Week range visible in row 2 */
+  #week-range {
+    display: block;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 12px;
+  }
+
+  /* Search fills remaining space in row 2 */
+  .hdr-r2 .search-wrap {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
+  }
+
+  /* Compact import button — show "＋ .ics" instead of full label */
+  .import-full    { display: none; }
+  .import-compact { display: inline; }
+  #import-btn { padding: 0 9px; font-size: 13px; }
+
+  /* Weeks selector: slightly narrower so row 2 fits comfortably */
+  #weeks-select { padding: 0 4px; }
+
+  /* 44 px touch targets */
+  .nav-btn   { width: 44px; height: 44px; }
   #today-btn { height: 44px; padding: 0 10px; }
-  .icon-btn { width: 44px; height: 44px; }
+  .icon-btn  { width: 44px; height: 44px; }
 
-  /* Cells a bit shorter — 1 column gets more width */
+  /* Cells a bit shorter */
   .planner-cell { min-height: 80px; }
 }
 
