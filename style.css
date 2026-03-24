@@ -402,6 +402,221 @@ input {
 .cal-remove:hover { background: #fee2e2; color: #dc2626; }
 [data-theme="dark"] .cal-remove:hover { background: #3b1414; color: #f87171; }
 
+/* ── Subscribed calendar extras ──────────────────────────────────────────────── */
+.cal-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cal-sync-meta {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-sync-meta.cal-sync-err { color: #f59e0b; }
+.cal-sync-meta svg { flex-shrink: 0; }
+
+.cal-refresh {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 4px;
+  color: var(--text-2);
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.cal-refresh:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.cal-refresh:disabled { cursor: default; opacity: .6; }
+
+/* Subscribed items: show refresh by default, swap to remove on hover */
+.cal-subscribed .cal-refresh           { display: flex; }
+.cal-subscribed .cal-remove            { display: none; }
+.cal-subscribed:hover .cal-refresh     { display: none; }
+.cal-subscribed:hover .cal-remove      { display: flex; }
+
+/* Spinner keyframe + class */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .8s linear infinite; display: block; }
+
+/* ── Sidebar footer ───────────────────────────────────────────────────────────── */
+.sidebar-footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-add-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  text-align: left;
+  transition: background .1s, color .1s;
+}
+.sidebar-add-item:hover { background: var(--surface-2); color: var(--text); }
+
+/* ── Subscribe dialog ─────────────────────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 100;
+}
+.modal-overlay.active { display: block; }
+
+.modal-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%) scale(.96);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  z-index: 101;
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow-popup);
+  width: min(440px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.modal-dialog.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.modal-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 0;
+}
+.modal-hdr h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.modal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 20px 18px;
+}
+
+/* Form fields inside modal */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.form-optional {
+  font-weight: 400;
+  color: var(--text-2);
+  font-size: 11px;
+}
+.form-group input[type="url"],
+.form-group input[type="text"] {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+[data-theme="dark"] .form-group input:focus {
+  box-shadow: 0 0 0 3px rgba(96,165,250,.15);
+}
+.form-error {
+  font-size: 11px;
+  color: #ef4444;
+  min-height: 14px;
+}
+
+/* Color picker swatches */
+.color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.color-swatch {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--c);
+  border: 3px solid transparent;
+  outline: none;
+  cursor: pointer;
+  transition: transform .12s, border-color .12s;
+}
+.color-swatch:hover            { transform: scale(1.15); }
+.color-swatch.selected         { border-color: var(--text); transform: scale(1.1); }
+
+/* Modal action buttons */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px;
+  padding: 0 18px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.btn-primary:hover { opacity: .88; }
+.btn-primary:disabled { opacity: .5; cursor: default; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  border-radius: 8px;
+  transition: background .15s, color .15s;
+}
+.btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+
 /* ── Calendar area ───────────────────────────────────────────────────────────── */
 #calendar-area {
   flex: 1;
