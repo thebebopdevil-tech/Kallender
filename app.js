@@ -11,8 +11,12 @@ const PALETTE = [
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
 ];
 
+const WEEK_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+const DEFAULT_WEEKS = 5;
+
 let calendars = [];
-let currentWeekStart = getWeekStart(new Date()); // Monday of first displayed week
+let preferredWeeks = DEFAULT_WEEKS; // user's chosen week count (saved to localStorage)
+let currentWeekStart = getWeekStart(new Date());
 let searchQuery = '';
 let activePopupEvent = null;
 
