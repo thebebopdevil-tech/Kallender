@@ -1,5 +1,5 @@
 /**
- * app.js — Kallender
+ * app.js — Kallendar
  * Planner-style calendar viewer for .ics files.
  * No backend, no frameworks — plain vanilla JS.
  */
