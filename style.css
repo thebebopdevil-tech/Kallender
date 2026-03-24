@@ -57,6 +57,7 @@ button {
   border: none;
   background: none;
   color: inherit;
+  touch-action: manipulation; /* prevent double-tap zoom */
 }
 
 input {
@@ -76,8 +77,8 @@ input {
 #top-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: 10px;
+  padding: 8px 14px;
   background: var(--header-bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -96,14 +97,14 @@ input {
 .nav-group {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .nav-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
   border-radius: 6px;
-  font-size: 15px;
+  font-size: 18px;
   color: var(--text-2);
   transition: background .15s, color .15s;
 }
@@ -111,7 +112,7 @@ input {
 
 #today-btn {
   padding: 0 12px;
-  height: 30px;
+  height: 32px;
   width: auto;
   font-size: 12px;
   font-weight: 600;
@@ -135,13 +136,13 @@ input {
   display: flex;
   align-items: center;
   flex: 1;
-  min-width: 120px;
+  min-width: 100px;
   max-width: 300px;
 }
 
 #search-input {
   width: 100%;
-  height: 30px;
+  height: 32px;
   padding: 0 28px 0 30px;
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -195,14 +196,14 @@ input {
   font-size: 16px;
   color: var(--text-2);
   transition: background .15s, color .15s;
+  flex-shrink: 0;
 }
 .icon-btn:hover { background: var(--surface-2); color: var(--text); }
 
 #import-btn {
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 4px;
   padding: 0 12px;
   height: 32px;
-  width: auto;
   font-size: 12px;
   font-weight: 600;
   background: var(--accent);
@@ -213,12 +214,26 @@ input {
 }
 #import-btn:hover { opacity: .88; }
 
+/* Hamburger — hidden on desktop, shown on mobile via media query */
+#hamburger-btn { display: none; }
+
 /* ── Main area ──────────────────────────────────────────────────────────────── */
 #main {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
+
+/* ── Sidebar overlay (mobile drawer backdrop) ─────────────────────────────── */
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 40;
+}
+#sidebar-overlay.active { display: block; }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────────── */
 #sidebar {
@@ -229,23 +244,34 @@ input {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: transform .25s ease;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 8px;
+  flex-shrink: 0;
 }
 
 .sidebar-title {
-  padding: 12px 14px 8px;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .6px;
   color: var(--text-2);
-  flex-shrink: 0;
 }
+
+/* Sidebar close button — only visible when drawer is open on mobile */
+#sidebar-close { display: none; }
 
 #calendar-list {
   list-style: none;
   padding: 4px 8px 12px;
   overflow-y: auto;
   flex: 1;
+  -webkit-overflow-scrolling: touch;
 }
 
 .cal-empty {
@@ -268,7 +294,7 @@ input {
 
 .cal-toggle {
   display: flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px;
+  width: 28px; height: 28px;
   border-radius: 4px;
   flex-shrink: 0;
   transition: opacity .15s;
@@ -297,9 +323,9 @@ input {
 
 .cal-remove {
   display: none;
-  width: 18px; height: 18px;
+  width: 28px; height: 28px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-2);
   align-items: center; justify-content: center;
   transition: background .15s, color .15s;
@@ -322,13 +348,14 @@ input {
 #week-grid {
   flex: 1;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pan-x;
 }
 
 /* ── Planner Grid ────────────────────────────────────────────────────────────── */
 .planner-grid {
   display: grid;
-  grid-template-columns: 68px repeat(5, 1fr);
-  min-width: 560px;
+  /* grid-template-columns set dynamically by JS */
 }
 
 /* Top-left corner */
@@ -357,7 +384,7 @@ input {
   top: 0;
   z-index: 10;
 }
-.planner-week-header:last-of-type { border-right: none; }
+.planner-week-header.last-header { border-right: none; }
 
 .wh-num {
   font-size: 12px;
@@ -388,6 +415,7 @@ input {
   position: sticky;
   left: 0;
   z-index: 5;
+  min-height: 44px;
 }
 .planner-day-label.weekend {
   color: var(--text-2);
@@ -406,7 +434,7 @@ input {
   background: var(--surface);
   overflow: hidden;
 }
-.planner-cell:nth-child(6n) { border-right: none; } /* last column */
+.planner-cell.last-col { border-right: none; }
 
 .planner-cell.weekend {
   background: var(--weekend-bg);
@@ -445,7 +473,7 @@ input {
 .event-pill {
   font-size: 11px;
   font-weight: 500;
-  padding: 2px 5px;
+  padding: 3px 6px;
   border-radius: 3px;
   white-space: nowrap;
   overflow: hidden;
@@ -453,8 +481,12 @@ input {
   cursor: pointer;
   color: var(--text);
   flex-shrink: 0;
-  line-height: 1.5;
+  line-height: 1.4;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
   transition: filter .12s, box-shadow .12s;
+  touch-action: manipulation;
 }
 .event-pill:hover {
   filter: brightness(0.92);
@@ -520,12 +552,13 @@ input {
 
 #popup-close {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; min-width: 28px;
+  width: 32px; height: 32px; min-width: 32px;
   border-radius: 50%;
   font-size: 14px;
   color: var(--text-2);
   transition: background .15s;
   margin-top: -2px;
+  touch-action: manipulation;
 }
 #popup-close:hover { background: var(--surface-2); color: var(--text); }
 
@@ -603,11 +636,71 @@ body.drag-over #calendar-area::after {
 #sidebar::-webkit-scrollbar { width: 4px; }
 #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* ── Responsive ─────────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  #sidebar { width: 160px; }
-  .app-logo { font-size: 15px; }
-  .search-wrap { max-width: 150px; }
-  .planner-grid { grid-template-columns: 52px repeat(5, 1fr); }
+/* ── Mobile: sidebar becomes a slide-in drawer (≤ 900px) ────────────────────── */
+@media (max-width: 900px) {
+  #hamburger-btn { display: flex; }
+  #sidebar-close  { display: flex; }
+
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 50;
+    width: 260px;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0,0,0,.18);
+  }
+  #sidebar.open { transform: translateX(0); }
+
+  /* Stretch calendar area to full width since sidebar is overlaid */
+  #calendar-area { width: 100%; }
+}
+
+/* ── Mobile portrait: single-week column, compact header ────────────────────── */
+@media (max-width: 767px) and (orientation: portrait) {
+  #top-bar {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  /* Hide the "Week N–N" label — it's in the grid header already */
+  #week-range { display: none; }
+
+  /* Shrink search */
+  .search-wrap {
+    min-width: 70px;
+    max-width: 140px;
+  }
+
+  /* Hide ".ics" text from import button */
+  .import-label { display: none; }
+
+  #import-btn {
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  /* Bigger touch targets */
+  .nav-btn  { width: 44px; height: 44px; }
+  #today-btn { height: 44px; padding: 0 10px; }
+  .icon-btn { width: 44px; height: 44px; }
+
+  /* Cells a bit shorter — 1 column gets more width */
+  .planner-cell { min-height: 80px; }
+}
+
+/* ── Small landscape phones / tablets in landscape ──────────────────────────── */
+@media (max-width: 900px) and (orientation: landscape) {
+  #top-bar {
+    padding: 5px 12px;
+    gap: 8px;
+  }
   .planner-cell { min-height: 72px; }
+}
+
+/* ── Very small screens (< 380px) ───────────────────────────────────────────── */
+@media (max-width: 380px) {
+  .app-logo { font-size: 15px; }
+  .search-wrap { min-width: 50px; }
+  #import-btn { display: none; }
 }
