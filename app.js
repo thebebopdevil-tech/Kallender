@@ -516,17 +516,6 @@ function bindUI() {
     e.target.value = '';
   });
 
-  // Header import button → dropdown menu
-  document.getElementById('import-btn').addEventListener('click', toggleImportMenu);
-  document.getElementById('import-file-item').addEventListener('click', () => {
-    closeImportMenu();
-    document.getElementById('file-input').click();
-  });
-  document.getElementById('import-url-item').addEventListener('click', () => {
-    closeImportMenu();
-    openSubscribeDialog();
-  });
-
   // Sidebar footer buttons
   document.getElementById('sidebar-import-file-btn').addEventListener('click', () => {
     closeSidebar();
