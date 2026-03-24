@@ -47,6 +47,12 @@ self.addEventListener('fetch', e => {
   if (!e.request.url.startsWith(self.location.origin)) return;
 
   const url = new URL(e.request.url);
+
+  // API calls must NEVER be cached — always go straight to the network.
+  // Without this, the cache-first branch below would store the first
+  // /api/proxy response and serve stale iCal data on every subsequent sync.
+  if (url.pathname.startsWith('/api/')) return;
+
   const isCodeAsset = /\.(html|js|css)$/.test(url.pathname) || url.pathname === '/' || url.pathname === '';
 
   if (isCodeAsset) {
