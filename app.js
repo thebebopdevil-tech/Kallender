@@ -1,6 +1,6 @@
 /**
  * app.js — Kallender
- * Week-based calendar viewer for .ics files. No backend, no frameworks.
+ * Planner-style calendar viewer for .ics files. No backend, no frameworks.
  */
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -10,8 +10,8 @@ const PALETTE = [
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
 ];
 
-let calendars = []; // { id, name, color, events[], visible }
-let currentWeekStart = getWeekStart(new Date());
+let calendars = [];
+let currentWeekStart = getWeekStart(new Date()); // Monday of first displayed week
 let searchQuery = '';
 let activePopupEvent = null;
 
@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCalendarList();
   renderWeek();
   bindUI();
-  scrollTo8am();
 });
 
 // ── Storage ───────────────────────────────────────────────────────────────────
@@ -33,7 +32,6 @@ function loadFromStorage() {
     const raw = localStorage.getItem('kallender_calendars');
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Rehydrate dates
       calendars = parsed.map(cal => ({
         ...cal,
         events: cal.events.map(ev => ({
@@ -68,7 +66,6 @@ function applyTheme(theme) {
 // ── UI Bindings ───────────────────────────────────────────────────────────────
 
 function bindUI() {
-  // File picker
   document.getElementById('file-input').addEventListener('change', e => {
     handleFiles(Array.from(e.target.files));
     e.target.value = '';
@@ -78,7 +75,6 @@ function bindUI() {
     document.getElementById('file-input').click();
   });
 
-  // Drag and drop on the whole grid area
   const dropZone = document.getElementById('app');
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();
@@ -98,13 +94,13 @@ function bindUI() {
     if (files.length) handleFiles(files);
   });
 
-  // Navigation
+  // Navigation moves 5 weeks at a time
   document.getElementById('prev-week').addEventListener('click', () => {
-    currentWeekStart = addDays(currentWeekStart, -7);
+    currentWeekStart = addDays(currentWeekStart, -35);
     renderWeek();
   });
   document.getElementById('next-week').addEventListener('click', () => {
-    currentWeekStart = addDays(currentWeekStart, 7);
+    currentWeekStart = addDays(currentWeekStart, 35);
     renderWeek();
   });
   document.getElementById('today-btn').addEventListener('click', () => {
@@ -112,13 +108,11 @@ function bindUI() {
     renderWeek();
   });
 
-  // Theme toggle
   document.getElementById('theme-toggle').addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
     applyTheme(current === 'dark' ? 'light' : 'dark');
   });
 
-  // Search
   const searchInput = document.getElementById('search-input');
   searchInput.addEventListener('input', () => {
     searchQuery = searchInput.value.trim().toLowerCase();
@@ -132,7 +126,6 @@ function bindUI() {
     renderWeek();
   });
 
-  // Popup close
   document.getElementById('event-popup-overlay').addEventListener('click', closePopup);
   document.getElementById('popup-close').addEventListener('click', closePopup);
   document.addEventListener('keydown', e => {
@@ -207,9 +200,8 @@ function renderCalendarList() {
   });
 }
 
-// ── Week Rendering ────────────────────────────────────────────────────────────
+// ── Planner Rendering ─────────────────────────────────────────────────────────
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function renderWeek() {
@@ -218,190 +210,110 @@ function renderWeek() {
 }
 
 function updateWeekHeader() {
-  const weekNum = getISOWeekNumber(currentWeekStart);
+  const weekEnd = addDays(currentWeekStart, 34);
+  const startWeek = getISOWeekNumber(currentWeekStart);
+  const endWeek = getISOWeekNumber(weekEnd);
   const yearStr = currentWeekStart.getFullYear() !== new Date().getFullYear()
     ? ` ${currentWeekStart.getFullYear()}` : '';
-  document.getElementById('week-range').textContent = `Week ${weekNum}${yearStr}`;
-}
-
-function getISOWeekNumber(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-  const week1 = new Date(d.getFullYear(), 0, 4);
-  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  document.getElementById('week-range').textContent = `Week ${startWeek}–${endWeek}${yearStr}`;
 }
 
 function renderGrid() {
-  const grid = document.getElementById('week-grid');
-  grid.innerHTML = '';
+  const container = document.getElementById('week-grid');
+  container.innerHTML = '';
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Day headers row
-  const headerRow = document.createElement('div');
-  headerRow.className = 'grid-header-row';
-  headerRow.innerHTML = '<div class="time-gutter-header"></div>';
+  const planner = document.createElement('div');
+  planner.className = 'planner-grid';
 
-  for (let d = 0; d < 7; d++) {
-    const day = addDays(currentWeekStart, d);
-    const isToday = day.getTime() === today.getTime();
+  // Corner (top-left)
+  const corner = document.createElement('div');
+  corner.className = 'planner-corner';
+  planner.appendChild(corner);
+
+  // 5 week header cells
+  for (let w = 0; w < 5; w++) {
+    const wkStart = addDays(currentWeekStart, w * 7);
+    const wkEnd = addDays(wkStart, 6);
+    const wkNum = getISOWeekNumber(wkStart);
     const cell = document.createElement('div');
-    cell.className = 'day-header' + (isToday ? ' today' : '');
-    cell.innerHTML = `<span class="day-name">${DAY_NAMES[d]}</span><span class="day-num">${day.getDate()}</span>`;
-    headerRow.appendChild(cell);
+    cell.className = 'planner-week-header';
+    cell.innerHTML = `
+      <span class="wh-num">Week ${wkNum}</span>
+      <span class="wh-range">${formatShortRange(wkStart, wkEnd)}</span>
+    `;
+    planner.appendChild(cell);
   }
-  grid.appendChild(headerRow);
 
-  // Body: time gutter + day columns
-  const body = document.createElement('div');
-  body.className = 'grid-body';
-  body.id = 'grid-body';
-
-  // Time gutter
-  const gutter = document.createElement('div');
-  gutter.className = 'time-gutter';
-  HOURS.forEach(h => {
-    const label = document.createElement('div');
-    label.className = 'time-label';
-    label.textContent = String(h).padStart(2, '0') + ':00';
-    gutter.appendChild(label);
-  });
-  body.appendChild(gutter);
-
-  // Collect visible, filtered events for the current week
-  const weekEvents = getWeekEvents();
-
-  // Day columns
+  // 7 day rows
   for (let d = 0; d < 7; d++) {
-    const day = addDays(currentWeekStart, d);
-    const isToday = day.getTime() === today.getTime();
-    const col = document.createElement('div');
-    col.className = 'day-col' + (isToday ? ' today' : '');
+    // Day label (sticky left)
+    const label = document.createElement('div');
+    label.className = 'planner-day-label' + (d >= 5 ? ' weekend' : '');
+    label.textContent = DAY_NAMES[d];
+    planner.appendChild(label);
 
-    // Hour cells (background grid lines)
-    HOURS.forEach(h => {
+    // 5 cells for this day across weeks
+    for (let w = 0; w < 5; w++) {
+      const date = addDays(currentWeekStart, w * 7 + d);
+      const isToday = date.getTime() === today.getTime();
+      const isWeekend = d >= 5;
+
       const cell = document.createElement('div');
-      cell.className = 'hour-cell';
-      col.appendChild(cell);
-    });
+      cell.className = 'planner-cell'
+        + (isToday ? ' today' : '')
+        + (isWeekend ? ' weekend' : '');
 
-    // Events for this day
-    const dayEvts = weekEvents.filter(ev => isSameDay(ev.event.start, day));
-    const positioned = computeLayout(dayEvts);
+      // Date number
+      const dateNum = document.createElement('span');
+      dateNum.className = 'cell-date' + (isToday ? ' today' : '');
+      dateNum.textContent = date.getDate();
+      cell.appendChild(dateNum);
 
-    positioned.forEach(({ ev, left, width }) => {
-      const block = createEventBlock(ev, left, width);
-      col.appendChild(block);
-    });
+      // Event pills
+      const dayEvents = getEventsForDay(date);
+      dayEvents.forEach(({ event: ev, cal }) => {
+        cell.appendChild(createEventPill(ev, cal));
+      });
 
-    body.appendChild(col);
+      planner.appendChild(cell);
+    }
   }
 
-  grid.appendChild(body);
-  scrollTo8am();
+  container.appendChild(planner);
 }
 
-function getWeekEvents() {
+function getEventsForDay(date) {
   const result = [];
-  const weekEnd = addDays(currentWeekStart, 7);
-
   calendars.forEach(cal => {
     if (!cal.visible) return;
     cal.events.forEach(ev => {
       if (!ev.start) return;
-      // Check if event overlaps the current week
-      const evStart = ev.start;
-      const evEnd = ev.end || new Date(evStart.getTime() + 3600000);
-
-      if (evEnd <= currentWeekStart || evStart >= weekEnd) return;
-
-      // Search filter
+      if (!isSameDay(ev.start, date)) return;
       if (searchQuery) {
         const haystack = [ev.title, ev.location, ev.description].join(' ').toLowerCase();
         if (!haystack.includes(searchQuery)) return;
       }
-
       result.push({ event: ev, cal });
     });
   });
-
+  result.sort((a, b) => a.event.start - b.event.start);
   return result;
 }
 
-function computeLayout(dayEvts) {
-  if (!dayEvts.length) return [];
-
-  // Sort by start
-  dayEvts.sort((a, b) => a.event.start - b.event.start);
-
-  // Simple overlap grouping
-  const columns = [];
-  const result = [];
-
-  dayEvts.forEach(item => {
-    const start = item.event.start;
-    const end = item.event.end || new Date(start.getTime() + 3600000);
-
-    let placed = false;
-    for (let c = 0; c < columns.length; c++) {
-      const lastEnd = columns[c];
-      if (start >= lastEnd) {
-        columns[c] = end;
-        result.push({ ev: item, colIdx: c });
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      columns.push(end);
-      result.push({ ev: item, colIdx: columns.length - 1 });
-    }
-  });
-
-  const totalCols = columns.length;
-  return result.map(r => ({
-    ev: r.ev,
-    left: r.colIdx / totalCols,
-    width: 1 / totalCols,
-  }));
-}
-
-function createEventBlock({ event: ev, cal }, left, width) {
-  const HOUR_HEIGHT = 60; // px per hour (matches CSS)
-  const startMins = ev.start.getHours() * 60 + ev.start.getMinutes();
-  const endDate = ev.end || new Date(ev.start.getTime() + 3600000);
-  const endMins = endDate.getHours() * 60 + endDate.getMinutes() || 24 * 60;
-  const duration = Math.max(endMins - startMins, 15);
-
-  const top = (startMins / 60) * HOUR_HEIGHT;
-  const height = (duration / 60) * HOUR_HEIGHT - 2;
-
-  const block = document.createElement('div');
-  block.className = 'event-block';
-  block.style.cssText = `
-    top: ${top}px;
-    height: ${height}px;
-    left: calc(${left * 100}% + 2px);
-    width: calc(${width * 100}% - 4px);
-    --ev-color: ${cal.color};
-    background: ${hexToRgba(cal.color, 0.15)};
-    border-left: 3px solid ${cal.color};
-  `;
-
-  const timeStr = formatTime(ev.start);
-  block.innerHTML = `
-    <span class="ev-time">${timeStr}</span>
-    <span class="ev-title">${escapeHtml(ev.title || '(No title)')}</span>
-  `;
-
-  block.addEventListener('click', e => {
+function createEventPill(ev, cal) {
+  const pill = document.createElement('div');
+  pill.className = 'event-pill';
+  pill.style.cssText = `background:${hexToRgba(cal.color, 0.18)};border-left:3px solid ${cal.color};`;
+  pill.textContent = ev.title || '(No title)';
+  pill.title = ev.title || '(No title)';
+  pill.addEventListener('click', e => {
     e.stopPropagation();
     openPopup(ev, cal);
   });
-
-  return block;
+  return pill;
 }
 
 // ── Popup ─────────────────────────────────────────────────────────────────────
@@ -452,10 +364,17 @@ function closePopup() {
 function getWeekStart(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  // Monday = 1, so offset = (day + 6) % 7
   const offset = (d.getDay() + 6) % 7;
   d.setDate(d.getDate() - offset);
   return d;
+}
+
+function getISOWeekNumber(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
 function addDays(date, n) {
@@ -479,6 +398,14 @@ function formatDateTime(date) {
     ' ' + formatTime(date);
 }
 
+function formatShortRange(start, end) {
+  const s = start.getDate();
+  const e = end.getDate();
+  const sm = start.toLocaleDateString(undefined, { month: 'short' });
+  const em = end.toLocaleDateString(undefined, { month: 'short' });
+  return sm === em ? `${s}–${e} ${sm}` : `${s} ${sm}–${e} ${em}`;
+}
+
 function hexToRgba(hex, alpha) {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -490,11 +417,4 @@ function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
-function scrollTo8am() {
-  const body = document.getElementById('grid-body');
-  if (!body) return;
-  const HOUR_HEIGHT = 60;
-  body.scrollTop = 8 * HOUR_HEIGHT;
 }
