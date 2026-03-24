@@ -1007,3 +1007,35 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
+/**
+ * linkifyText — escapes str for safe HTML insertion, then wraps every
+ * http/https URL it finds in a <a> that opens in a new tab.
+ * Non-URL text is HTML-escaped so this is safe to set as innerHTML.
+ */
+function linkifyText(str) {
+  if (!str) return '';
+  const urlRegex = /https?:\/\/[^\s<>"']+/g;
+  let result = '';
+  let lastIndex = 0;
+  let match;
+
+  while ((match = urlRegex.exec(str)) !== null) {
+    // Escape plain text before this URL
+    result += escapeHtml(str.slice(lastIndex, match.index));
+
+    // Strip trailing punctuation that almost certainly isn't part of the URL
+    // e.g. "Join here: https://meet.google.com/abc." — drop the final period
+    let url = match[0].replace(/[.,;:!?)\]]+$/, '');
+    const trailing = match[0].slice(url.length); // chars we stripped
+
+    result += `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+    if (trailing) result += escapeHtml(trailing);
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Append any remaining plain text
+  result += escapeHtml(str.slice(lastIndex));
+  return result;
+}
