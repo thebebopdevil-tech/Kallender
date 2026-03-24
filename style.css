@@ -96,9 +96,6 @@ input {
    items (week-range, weeks-select, search-wrap) which default to order:0. */
 .header-actions { order: 10; }
 
-/* Import button text variants */
-.import-compact { display: none; }
-
 .app-logo {
   font-size: 17px;
   font-weight: 700;
