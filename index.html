@@ -17,47 +17,62 @@
 
     <!-- Top bar -->
     <header id="top-bar">
-      <button id="hamburger-btn" class="icon-btn" aria-label="Toggle calendars sidebar" title="Calendars">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-          <line x1="2" y1="4.5" x2="16" y2="4.5"/>
-          <line x1="2" y1="9" x2="16" y2="9"/>
-          <line x1="2" y1="13.5" x2="16" y2="13.5"/>
-        </svg>
-      </button>
 
-      <span class="app-logo"><span>Kalle</span>ndar</span>
+      <!-- Row 1: logo + nav + actions
+           display:contents on desktop → items flow inline in #top-bar
+           display:flex on portrait mobile → real first row -->
+      <div class="hdr-r1">
+        <button id="hamburger-btn" class="icon-btn" aria-label="Toggle calendars sidebar" title="Calendars">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <line x1="2" y1="4.5" x2="16" y2="4.5"/>
+            <line x1="2" y1="9" x2="16" y2="9"/>
+            <line x1="2" y1="13.5" x2="16" y2="13.5"/>
+          </svg>
+        </button>
 
-      <div class="nav-group">
-        <button id="prev-week" class="nav-btn" title="Previous" aria-label="Previous">&#8249;</button>
-        <button id="today-btn" class="nav-btn" title="Go to today">Today</button>
-        <button id="next-week" class="nav-btn" title="Next" aria-label="Next">&#8250;</button>
+        <span class="app-logo"><span>Kalle</span>ndar</span>
+
+        <div class="nav-group">
+          <button id="prev-week" class="nav-btn" title="Previous" aria-label="Previous">&#8249;</button>
+          <button id="today-btn" class="nav-btn" title="Go to today">Today</button>
+          <button id="next-week" class="nav-btn" title="Next" aria-label="Next">&#8250;</button>
+        </div>
+
+        <div class="header-actions">
+          <button id="theme-toggle" class="icon-btn" title="Toggle dark mode" aria-label="Switch to dark mode">☀</button>
+          <input type="file" id="file-input" accept=".ics,text/calendar" multiple hidden />
+          <button id="import-btn">
+            <span class="import-full">+ Import .ics</span>
+            <span class="import-compact">＋ .ics</span>
+          </button>
+        </div>
       </div>
 
-      <span id="week-range"></span>
+      <!-- Row 2: week label + selector + search
+           display:contents on desktop → items flow inline after row-1 items
+           display:flex on portrait mobile → real second row -->
+      <div class="hdr-r2">
+        <span id="week-range"></span>
 
-      <select id="weeks-select" title="Weeks to display" aria-label="Weeks to display">
-        <option value="1">1 week</option>
-        <option value="2">2 weeks</option>
-        <option value="3">3 weeks</option>
-        <option value="4">4 weeks</option>
-        <option value="5">5 weeks</option>
-        <option value="6">6 weeks</option>
-        <option value="8">8 weeks</option>
-        <option value="10">10 weeks</option>
-        <option value="12">12 weeks</option>
-      </select>
+        <select id="weeks-select" title="Weeks to display" aria-label="Weeks to display">
+          <option value="1">1 week</option>
+          <option value="2">2 weeks</option>
+          <option value="3">3 weeks</option>
+          <option value="4">4 weeks</option>
+          <option value="5">5 weeks</option>
+          <option value="6">6 weeks</option>
+          <option value="8">8 weeks</option>
+          <option value="10">10 weeks</option>
+          <option value="12">12 weeks</option>
+        </select>
 
-      <div class="search-wrap">
-        <span class="search-icon">&#128269;</span>
-        <input type="search" id="search-input" placeholder="Search events…" autocomplete="off" />
-        <button id="search-clear" title="Clear search" aria-label="Clear search">&#10005;</button>
+        <div class="search-wrap">
+          <span class="search-icon">&#128269;</span>
+          <input type="search" id="search-input" placeholder="Search events…" autocomplete="off" />
+          <button id="search-clear" title="Clear search" aria-label="Clear search">&#10005;</button>
+        </div>
       </div>
 
-      <div class="header-actions">
-        <button id="theme-toggle" class="icon-btn" title="Toggle dark mode" aria-label="Switch to dark mode">☀</button>
-        <input type="file" id="file-input" accept=".ics,text/calendar" multiple hidden />
-        <button id="import-btn">+ <span class="import-label">Import .ics</span></button>
-      </div>
     </header>
 
     <!-- Main content -->
