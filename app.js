@@ -597,7 +597,6 @@ function bindUI() {
     if (e.key === 'Escape') {
       closePopup();
       closeSubscribeDialog();
-      closeImportMenu();
     }
   });
 
