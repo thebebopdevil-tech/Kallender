@@ -437,11 +437,9 @@ input {
 .cal-refresh:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
 .cal-refresh:disabled { cursor: default; opacity: .6; }
 
-/* Subscribed items: show refresh by default, swap to remove on hover */
-.cal-subscribed .cal-refresh           { display: flex; }
-.cal-subscribed .cal-remove            { display: none; }
-.cal-subscribed:hover .cal-refresh     { display: none; }
-.cal-subscribed:hover .cal-remove      { display: flex; }
+/* Subscribed items: both refresh and remove always visible */
+.cal-subscribed .cal-refresh { display: flex; }
+.cal-subscribed .cal-remove  { display: flex; }
 
 /* Spinner keyframe + class */
 @keyframes spin { to { transform: rotate(360deg); } }
