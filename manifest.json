@@ -1,6 +1,6 @@
 {
-  "name": "Kallender",
-  "short_name": "Kallender",
+  "name": "Kallendar",
+  "short_name": "Kallendar",
   "description": "A planner-style calendar viewer for .ics files — no login, no backend.",
   "start_url": "./index.html",
   "display": "standalone",
