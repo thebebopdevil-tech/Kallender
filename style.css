@@ -82,8 +82,22 @@ input {
   background: var(--header-bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* rows handled explicitly on mobile */
 }
+
+/* ── Header row wrappers ──────────────────────────────────────────────────────
+   display:contents makes each wrapper "invisible" on desktop/landscape —
+   their children participate directly in #top-bar's flex layout.
+   On portrait mobile these are overridden to display:flex to form real rows. */
+.hdr-r1, .hdr-r2 { display: contents; }
+
+/* On desktop header-actions lives inside .hdr-r1 (display:contents), so it
+   becomes a direct #top-bar flex child. order:10 sends it after all .hdr-r2
+   items (week-range, weeks-select, search-wrap) which default to order:0. */
+.header-actions { order: 10; }
+
+/* Import button text variants */
+.import-compact { display: none; }
 
 .app-logo {
   font-size: 17px;
