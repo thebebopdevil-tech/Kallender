@@ -123,6 +123,34 @@ input {
 }
 #today-btn:hover { background: var(--surface-2); }
 
+/* Weeks selector */
+#weeks-select {
+  height: 32px;
+  padding: 0 24px 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--surface-2);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b6b75' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  transition: border-color .15s, background-color .15s;
+  flex-shrink: 0;
+}
+#weeks-select:hover { background-color: var(--surface); border-color: var(--text-2); }
+#weeks-select:focus { border-color: var(--accent); }
+#weeks-select option:disabled { color: var(--text-2); }
+[data-theme="dark"] #weeks-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238e8e99' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
 #week-range {
   font-size: 14px;
   font-weight: 600;
