@@ -47,6 +47,7 @@ let subSelectedColor = PALETTE[0]; // colour chosen in subscribe dialog
 
 document.addEventListener('DOMContentLoaded', () => {
   loadFromStorage();
+  importFromURL();       // must run before first render so shared cals are included
   applyTheme(getSavedTheme());
   renderCalendarList();
   bindUI();
