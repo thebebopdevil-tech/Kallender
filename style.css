@@ -231,20 +231,6 @@ input {
 }
 .icon-btn:hover { background: var(--surface-2); color: var(--text); }
 
-#import-btn {
-  display: flex; align-items: center; gap: 4px;
-  padding: 0 12px;
-  height: 32px;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 8px;
-  transition: opacity .15s;
-  white-space: nowrap;
-}
-#import-btn:hover { opacity: .88; }
-
 /* Hamburger — hidden on desktop, shown on mobile via media query */
 #hamburger-btn { display: none; }
 
