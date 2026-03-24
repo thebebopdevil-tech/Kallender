@@ -913,6 +913,46 @@ body.drag-over #calendar-area::after {
   z-index: 50;
 }
 
+/* ── Sidebar divider (between add-cal and config sections) ──────────────────── */
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}
+
+/* ── Sidebar header share button ─────────────────────────────────────────────── */
+.sidebar-header .icon-btn {
+  color: var(--text-2);
+}
+.sidebar-header .icon-btn:hover {
+  color: var(--text);
+}
+
+/* ── Toast notification ──────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--text);
+  color: var(--surface);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 18px;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  z-index: 500;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.toast-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* ── Scrollbar styling ───────────────────────────────────────────────────────── */
 #week-grid::-webkit-scrollbar { width: 6px; height: 6px; }
 #week-grid::-webkit-scrollbar-track { background: transparent; }
