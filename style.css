@@ -124,46 +124,23 @@ input {
 #today-btn:hover { background: var(--surface-2); }
 
 /* Weeks selector */
-.weeks-wrap {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+#weeks-select {
   height: 32px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface-2);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: border-color .15s, background-color .15s;
-}
-.weeks-wrap:hover { background: var(--surface); border-color: var(--text-2); }
-
-.weeks-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-2);
-  white-space: nowrap;
-  user-select: none;
-}
-
-#weeks-select {
-  height: 28px;
-  padding: 0 4px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
   color: var(--text);
   font-family: var(--font);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
   outline: none;
-  min-width: 28px;
-  text-align: center;
+  flex-shrink: 0;
+  transition: border-color .15s;
 }
+#weeks-select:hover { border-color: var(--text-2); }
+#weeks-select:focus { border-color: var(--accent); }
 #weeks-select option:disabled { color: var(--text-2); }
 
 #week-range {
