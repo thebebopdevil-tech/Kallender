@@ -1041,7 +1041,24 @@ function renderGrid() {
     planner.appendChild(cell);
   }
 
-  // 7 day rows
+  // ── All-day row ──────────────────────────────────────────────────────────────
+  const adLabel = document.createElement('div');
+  adLabel.className = 'planner-allday-label';
+  adLabel.textContent = 'All day';
+  planner.appendChild(adLabel);
+
+  for (let w = 0; w < totalCols; w++) {
+    const wkStart = addDays(renderedStart, w * 7);
+    const adCell  = document.createElement('div');
+    adCell.className = 'planner-allday-cell' + (w === totalCols - 1 ? ' last-col' : '');
+    adCell.dataset.weekStart = `${wkStart.getFullYear()}-${String(wkStart.getMonth()+1).padStart(2,'0')}-${String(wkStart.getDate()).padStart(2,'0')}`;
+    getAllDayEventsForWeek(wkStart).forEach(({ event: ev, cal }) => {
+      adCell.appendChild(createEventPill(ev, cal));
+    });
+    planner.appendChild(adCell);
+  }
+
+  // ── 7 day rows ────────────────────────────────────────────────────────────────
   for (let d = 0; d < 7; d++) {
     const label = document.createElement('div');
     label.className = 'planner-day-label' + (d >= 5 ? ' weekend' : '');
