@@ -1184,10 +1184,22 @@ function openPopup(ev, cal) {
   document.getElementById('popup-cal-name').textContent = cal.name;
   document.getElementById('popup-cal-dot').style.background = cal.color;
 
-  const startStr = formatDateTime(ev.start);
-  const endStr   = ev.end ? formatDateTime(ev.end) : '';
-  document.getElementById('popup-time').textContent =
-    endStr ? `${startStr} – ${endStr}` : startStr;
+  let timeText;
+  if (ev.startAllDay) {
+    const fmt = d => d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    const s = fmt(ev.start);
+    if (ev.endAllDay && ev.end) {
+      const lastDay = addDays(ev.end, -1); // DTEND is exclusive for all-day events
+      timeText = isSameDay(ev.start, lastDay) ? `All day · ${s}` : `All day · ${s} – ${fmt(lastDay)}`;
+    } else {
+      timeText = `All day · ${s}`;
+    }
+  } else {
+    const startStr = formatDateTime(ev.start);
+    const endStr   = ev.end ? formatDateTime(ev.end) : '';
+    timeText = endStr ? `${startStr} – ${endStr}` : startStr;
+  }
+  document.getElementById('popup-time').textContent = timeText;
 
   const locRow = document.getElementById('popup-location-row');
   if (ev.location) {
