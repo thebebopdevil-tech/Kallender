@@ -836,6 +836,7 @@ function renderCalendarList() {
 
     list.appendChild(li);
   });
+  renderMiniCal(); // refresh event-dot indicators when calendar set changes
 }
 
 // ── Calendar color picker popover ─────────────────────────────────────────────
