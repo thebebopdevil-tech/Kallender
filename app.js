@@ -44,6 +44,8 @@ let searchQuery         = '';
 let activePopupEvent    = null;
 let _suppressScroll     = false;
 let showTimeIndicator   = true;
+let miniCalYear         = new Date().getFullYear();
+let miniCalMonth        = new Date().getMonth();
 
 const syncingIds     = new Set(); // cal ids currently being fetched
 let subSelectedColor = PALETTE[0]; // colour chosen in subscribe dialog
