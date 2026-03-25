@@ -139,6 +139,9 @@ function loadFromStorage() {
     const n = parseInt(savedWeeks, 10);
     if (WEEK_OPTIONS.includes(n)) preferredWeeks = n;
   }
+
+  const savedIndicator = localStorage.getItem('kallendar_time_indicator');
+  if (savedIndicator !== null) showTimeIndicator = savedIndicator !== 'false';
 }
 
 function saveToStorage() {
