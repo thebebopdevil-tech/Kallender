@@ -874,10 +874,9 @@ function renderGrid() {
     }
   }
 
+  _suppressScroll = true;          // set BEFORE any DOM change that could fire scroll
   container.innerHTML = '';
   container.appendChild(planner);
-
-  _suppressScroll = true;
   container.scrollLeft = BUFFER_WEEKS * colWidth;
   setTimeout(() => { _suppressScroll = false; }, 50);
 }
