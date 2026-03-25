@@ -296,9 +296,11 @@ async function syncCalendar(cal) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const icsText = await res.text();
 
-    cal.events    = parseICS(icsText);
-    cal.lastSynced = Date.now();
-    cal.syncError  = false;
+    const parsed      = parseICS(icsText);
+    cal.events        = parsed.events;
+    cal.icsColor      = parsed.calendarColor || null;
+    cal.lastSynced    = Date.now();
+    cal.syncError     = false;
 
     // Auto-detect name from calendar data if the user left it blank
     if (!cal.name) {
