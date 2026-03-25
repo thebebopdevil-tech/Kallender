@@ -11,6 +11,21 @@ const PALETTE = [
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
 ];
 
+// Google Calendar colour-name → hex (used when CATEGORIES or COLOR contains a name)
+const GOOGLE_COLOR_MAP = {
+  'tomato':    '#D50000',
+  'flamingo':  '#E67C73',
+  'tangerine': '#F4511E',
+  'banana':    '#F6BF26',
+  'sage':      '#33B679',
+  'basil':     '#0B8043',
+  'peacock':   '#039BE5',
+  'blueberry': '#3F51B5',
+  'lavender':  '#7986CB',
+  'grape':     '#8E24AA',
+  'graphite':  '#616161',
+};
+
 const WEEK_OPTIONS      = [1, 2, 3, 4, 5, 6, 8, 10, 12];
 const DEFAULT_WEEKS     = 5;
 const BUFFER_WEEKS      = 12;
