@@ -571,12 +571,32 @@ function bindUI() {
     searchQuery = searchInput.value.trim().toLowerCase();
     document.getElementById('search-clear').style.display = searchQuery ? 'flex' : 'none';
     refreshEventPills();
+    if (searchQuery) {
+      renderSearchDropdown(searchAllEvents(searchQuery));
+    } else {
+      closeSearchDropdown();
+    }
   });
   document.getElementById('search-clear').addEventListener('click', () => {
     searchInput.value = '';
     searchQuery = '';
     document.getElementById('search-clear').style.display = 'none';
+    closeSearchDropdown();
     refreshEventPills();
+  });
+  // Re-open dropdown when input is focused and already has a query
+  searchInput.addEventListener('focus', () => {
+    if (searchQuery) renderSearchDropdown(searchAllEvents(searchQuery));
+  });
+  // Close dropdown on Escape
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeSearchDropdown(); searchInput.blur(); }
+  });
+  // Close dropdown when clicking outside the search-wrap
+  document.addEventListener('click', e => {
+    if (!document.getElementById('search-input').closest('.search-wrap').contains(e.target)) {
+      closeSearchDropdown();
+    }
   });
 
   // Event popup close
