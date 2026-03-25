@@ -672,6 +672,17 @@ function bindUI() {
     if (file) importConfigFile(file);
     e.target.value = '';
   });
+
+  // Time-indicator toggle
+  const timeToggle = document.getElementById('time-indicator-toggle');
+  if (timeToggle) {
+    timeToggle.checked = showTimeIndicator;
+    timeToggle.addEventListener('change', () => {
+      showTimeIndicator = timeToggle.checked;
+      localStorage.setItem('kallendar_time_indicator', String(showTimeIndicator));
+      updateTimeIndicator();
+    });
+  }
 }
 
 // ── Scroll handling (infinite horizontal scroll) ──────────────────────────────
