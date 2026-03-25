@@ -845,6 +845,16 @@ input {
   color: var(--text-2);
 }
 
+/* Clickable links inside popup location + description */
+.popup-field a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;      /* prevent long URLs from overflowing */
+  transition: opacity .15s;
+}
+.popup-field a:hover { opacity: .75; }
+
 /* ── Drag over indicator ─────────────────────────────────────────────────────── */
 body.drag-over #calendar-area::after {
   content: 'Drop .ics files here';
