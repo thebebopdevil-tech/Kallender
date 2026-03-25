@@ -881,6 +881,18 @@ function renderGrid() {
   setTimeout(() => { _suppressScroll = false; }, 50);
 }
 
+// Lightweight pill refresh — used by search so the grid never scrolls
+function refreshEventPills() {
+  document.querySelectorAll('.planner-cell[data-date]').forEach(cell => {
+    cell.querySelectorAll('.event-pill').forEach(p => p.remove());
+    const [y, m, d] = cell.dataset.date.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    getEventsForDay(date).forEach(({ event: ev, cal }) => {
+      cell.appendChild(createEventPill(ev, cal));
+    });
+  });
+}
+
 function getEventsForDay(date) {
   const result = [];
   calendars.forEach(cal => {
