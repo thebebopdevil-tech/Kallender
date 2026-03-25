@@ -549,6 +549,104 @@ input {
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin .8s linear infinite; display: block; }
 
+/* ── Mini calendar ────────────────────────────────────────────────────────────── */
+#mini-cal {
+  flex-shrink: 0;
+  padding: 10px 10px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mini-cal-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.mini-cal-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.mini-cal-nav {
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-2);
+  flex-shrink: 0;
+  transition: background .12s, color .12s;
+}
+.mini-cal-nav:hover { background: var(--surface-2); color: var(--text); }
+
+.mini-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+
+.mini-dow {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-align: center;
+  padding: 2px 0 3px;
+  text-transform: uppercase;
+  letter-spacing: .2px;
+}
+
+.mini-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1px 0 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .1s;
+  gap: 1px;
+}
+.mini-day:hover { background: var(--surface-2); }
+.mini-day.empty { pointer-events: none; }
+
+.mini-day-num {
+  font-size: 10px;
+  line-height: 16px;
+  width: 18px;
+  text-align: center;
+  border-radius: 50%;
+  color: var(--text-2);
+}
+
+.mini-day.mini-today .mini-day-num {
+  background: var(--today-header);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Days inside the currently visible grid range */
+.mini-day.mini-in-view {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.mini-day.mini-in-view .mini-day-num {
+  color: var(--text);
+  font-weight: 600;
+}
+/* today takes priority over in-view background */
+.mini-day.mini-in-view.mini-today {
+  background: transparent;
+}
+
+.mini-dot {
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
 /* ── Sidebar footer ───────────────────────────────────────────────────────────── */
 .sidebar-footer {
   flex-shrink: 0;
