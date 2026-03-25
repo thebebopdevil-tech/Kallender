@@ -69,6 +69,20 @@ function parseICS(text) {
         case 'RRULE':
           current.rrule = value.trim();
           break;
+        case 'COLOR':
+          // RFC 7986 — CSS color value or name
+          if (!current.colorRaw) current.colorRaw = value.trim();
+          break;
+        case 'X-APPLE-CALENDAR-COLOR':
+          if (!current.colorRaw) current.colorRaw = value.trim();
+          break;
+        case 'X-GOOGLE-CALENDAR-COLOR':
+          if (!current.colorRaw) current.colorRaw = value.trim();
+          break;
+        case 'CATEGORIES':
+          // Google Calendar encodes event colour as a CATEGORIES value
+          current.categories = unescapeICS(value).trim();
+          break;
       }
     }
   }
