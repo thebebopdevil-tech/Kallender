@@ -570,13 +570,13 @@ function bindUI() {
   searchInput.addEventListener('input', () => {
     searchQuery = searchInput.value.trim().toLowerCase();
     document.getElementById('search-clear').style.display = searchQuery ? 'flex' : 'none';
-    renderWeek();
+    refreshEventPills();
   });
   document.getElementById('search-clear').addEventListener('click', () => {
     searchInput.value = '';
     searchQuery = '';
     document.getElementById('search-clear').style.display = 'none';
-    renderWeek();
+    refreshEventPills();
   });
 
   // Event popup close
