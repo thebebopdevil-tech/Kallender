@@ -962,6 +962,7 @@ function navigateToSearchResult(ev) {
 function renderWeek() {
   updateWeekHeader();
   renderGrid();
+  renderMiniCal();
 }
 
 function updateWeekHeader() {
