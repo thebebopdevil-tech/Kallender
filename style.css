@@ -730,6 +730,12 @@ input {
   filter: brightness(1.2);
 }
 
+/* Search match highlight */
+.event-pill.search-match {
+  box-shadow: 0 0 0 1.5px currentColor, 0 1px 5px rgba(0,0,0,.15);
+  font-weight: 600;
+}
+
 /* ── Event Popup ─────────────────────────────────────────────────────────────── */
 #event-popup-overlay {
   position: fixed;
