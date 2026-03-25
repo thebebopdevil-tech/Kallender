@@ -819,6 +819,12 @@ function renderCalendarList() {
       renderCalendarList();
       renderWeek();
     });
+    // Clicking the color dot opens the palette popover; stop-propagation prevents
+    // the parent toggle button from also firing a visibility change.
+    li.querySelector('.cal-dot').addEventListener('click', e => {
+      e.stopPropagation();
+      openCalColorPicker(cal, e.currentTarget);
+    });
     li.querySelector('.cal-remove').addEventListener('click', () => {
       calendars = calendars.filter(c => c.id !== cal.id);
       saveToStorage();
