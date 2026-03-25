@@ -1064,9 +1064,10 @@ function getEventsForDay(date) {
 }
 
 function createEventPill(ev, cal) {
-  const pill = document.createElement('div');
+  const pill  = document.createElement('div');
   pill.className = searchQuery ? 'event-pill search-match' : 'event-pill';
-  pill.style.cssText = `background:${hexToRgba(cal.color, 0.18)};border-left:3px solid ${cal.color};`;
+  const color = resolveEventColor(ev) || cal.color;
+  pill.style.cssText = `background:${hexToRgba(color, 0.18)};border-left:3px solid ${color};`;
   pill.textContent = ev.title || '(No title)';
   pill.title       = ev.title || '(No title)';
   pill.addEventListener('click', e => { e.stopPropagation(); openPopup(ev, cal); });
