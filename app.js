@@ -809,6 +809,78 @@ function renderCalendarList() {
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+// ── Search dropdown ───────────────────────────────────────────────────────────
+
+function searchAllEvents(query) {
+  const results = [];
+  calendars.forEach(cal => {
+    if (!cal.visible) return;
+    cal.events.forEach(ev => {
+      if (!ev.start) return;
+      const haystack = [ev.title, ev.location, ev.description].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(query)) return;
+      results.push({ ev, cal });
+    });
+  });
+  results.sort((a, b) => a.ev.start - b.ev.start);
+  return results.slice(0, 10);
+}
+
+function renderSearchDropdown(results) {
+  const dd = document.getElementById('search-dropdown');
+  dd.innerHTML = '';
+  if (!results.length) {
+    const empty = document.createElement('div');
+    empty.className = 'search-no-results';
+    empty.textContent = 'No events found';
+    dd.appendChild(empty);
+  } else {
+    results.forEach(({ ev, cal }) => {
+      const item = document.createElement('div');
+      item.className = 'search-result';
+      const dayStr  = ev.start.toLocaleDateString(undefined, { weekday: 'long' });
+      const dateStr = ev.start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      item.innerHTML =
+        `<div class="search-result-title">${escapeHtml(ev.title || '(No title)')}</div>` +
+        `<div class="search-result-meta">${escapeHtml(dayStr)}, ${escapeHtml(dateStr)}` +
+        ` &middot; <span style="color:${cal.color}">${escapeHtml(cal.name)}</span></div>`;
+      item.addEventListener('mousedown', e => {
+        e.preventDefault(); // keep input focused until we're done
+        closeSearchDropdown();
+        navigateToSearchResult(ev);
+      });
+      dd.appendChild(item);
+    });
+  }
+  dd.hidden = false;
+}
+
+function closeSearchDropdown() {
+  document.getElementById('search-dropdown').hidden = true;
+}
+
+function navigateToSearchResult(ev) {
+  // Clear search state so all events render normally
+  searchQuery = '';
+  const input = document.getElementById('search-input');
+  input.value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  refreshEventPills();
+
+  // Navigate grid to the week containing the event
+  currentWeekStart = getWeekStart(ev.start);
+  renderGrid();
+
+  // Briefly highlight the day cell
+  const pad = n => String(n).padStart(2, '0');
+  const key = `${ev.start.getFullYear()}-${pad(ev.start.getMonth()+1)}-${pad(ev.start.getDate())}`;
+  const cell = document.querySelector(`.planner-cell[data-date="${key}"]`);
+  if (cell) {
+    cell.classList.add('nav-highlight');
+    setTimeout(() => cell.classList.remove('nav-highlight'), 1400);
+  }
+}
+
 function renderWeek() {
   updateWeekHeader();
   renderGrid();
