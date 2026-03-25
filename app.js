@@ -1065,7 +1065,9 @@ function getEventsForDay(date) {
 function createEventPill(ev, cal) {
   const pill  = document.createElement('div');
   pill.className = searchQuery ? 'event-pill search-match' : 'event-pill';
-  const color = resolveEventColor(ev) || cal.icsColor || cal.color;
+  // Use calendar color for all events (per-event color unavailable in Google iCal feeds).
+  // Apple Calendar file imports may surface ev.color via the parser; use it if present.
+  const color = resolveEventColor(ev) || cal.color;
   pill.style.cssText = `background:${hexToRgba(color, 0.18)};border-left:3px solid ${color};`;
   pill.textContent = ev.title || '(No title)';
   pill.title       = ev.title || '(No title)';
