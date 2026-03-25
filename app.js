@@ -1102,11 +1102,21 @@ function renderGrid() {
 
 // Lightweight pill refresh — used by search so the grid never scrolls
 function refreshEventPills() {
+  // Timed-event day cells
   document.querySelectorAll('.planner-cell[data-date]').forEach(cell => {
     cell.querySelectorAll('.event-pill').forEach(p => p.remove());
     const [y, m, d] = cell.dataset.date.split('-').map(Number);
     const date = new Date(y, m - 1, d);
     getEventsForDay(date).forEach(({ event: ev, cal }) => {
+      cell.appendChild(createEventPill(ev, cal));
+    });
+  });
+  // All-day row cells
+  document.querySelectorAll('.planner-allday-cell[data-week-start]').forEach(cell => {
+    cell.querySelectorAll('.event-pill').forEach(p => p.remove());
+    const [y, m, d] = cell.dataset.weekStart.split('-').map(Number);
+    const weekStart = new Date(y, m - 1, d);
+    getAllDayEventsForWeek(weekStart).forEach(({ event: ev, cal }) => {
       cell.appendChild(createEventPill(ev, cal));
     });
   });
