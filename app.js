@@ -859,6 +859,7 @@ function renderGrid() {
         isWeekend ? 'weekend' : '',
         w === totalCols - 1 ? 'last-col' : '',
       ].filter(Boolean).join(' ');
+      cell.dataset.date = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 
       const dateNum = document.createElement('span');
       dateNum.className = 'cell-date' + (isToday ? ' today' : '');
