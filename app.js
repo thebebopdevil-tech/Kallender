@@ -830,6 +830,51 @@ function renderCalendarList() {
   });
 }
 
+// ── Calendar color picker popover ─────────────────────────────────────────────
+
+function openCalColorPicker(cal, anchorEl) {
+  // Close any existing popover first
+  const existing = document.getElementById('cal-color-popover');
+  if (existing) { existing.remove(); return; } // second click on same dot closes it
+
+  const popover = document.createElement('div');
+  popover.id = 'cal-color-popover';
+  popover.className = 'cal-color-popover';
+
+  PALETTE.forEach(hex => {
+    const swatch = document.createElement('button');
+    swatch.type = 'button';
+    swatch.className = 'color-swatch' + (hex === cal.color ? ' selected' : '');
+    swatch.style.setProperty('--c', hex);
+    swatch.title = hex;
+    swatch.addEventListener('click', e => {
+      e.stopPropagation();
+      cal.color = hex;
+      saveToStorage();
+      renderCalendarList();
+      refreshEventPills();
+      popover.remove();
+    });
+    popover.appendChild(swatch);
+  });
+
+  // Position below the anchor element
+  const rect = anchorEl.getBoundingClientRect();
+  popover.style.top  = `${rect.bottom + window.scrollY + 6}px`;
+  popover.style.left = `${rect.left  + window.scrollX}px`;
+  document.body.appendChild(popover);
+
+  // Close when clicking anywhere outside the popover
+  setTimeout(() => {
+    document.addEventListener('click', function onOutside(e) {
+      if (!popover.contains(e.target)) {
+        popover.remove();
+        document.removeEventListener('click', onOutside);
+      }
+    });
+  }, 0);
+}
+
 // ── Planner Rendering ─────────────────────────────────────────────────────────
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
