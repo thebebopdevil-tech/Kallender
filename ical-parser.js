@@ -215,16 +215,6 @@ function parseICS(text) {
     if (!ev.title) ev.title = '(No title)';
   }
 
-  // ── Debug logging ─────────────────────────────────────────────────────────
-  console.log(
-    `[Kallendar] Parsed ${events.length} event(s). Calendar color: ${calendarColor || 'none'}`
-  );
-  events.slice(0, 3).forEach((ev, i) => {
-    console.log(
-      `[Kallendar]   Event ${i + 1}: "${ev.title}" | color: ${ev.color || 'none'}`
-    );
-  });
-
   return { events, calendarColor };
 }
 
