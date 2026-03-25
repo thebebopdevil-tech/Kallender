@@ -1101,12 +1101,35 @@ function getEventsForDay(date) {
     if (!cal.visible) return;
     cal.events.forEach(ev => {
       if (!ev.start) return;
+      if (ev.startAllDay) return;        // shown in all-day row instead
       if (!isSameDay(ev.start, date)) return;
       if (searchQuery) {
         const haystack = [ev.title, ev.location, ev.description].join(' ').toLowerCase();
         if (!haystack.includes(searchQuery)) return;
       }
       result.push({ event: ev, cal });
+    });
+  });
+  result.sort((a, b) => a.event.start - b.event.start);
+  return result;
+}
+
+function getAllDayEventsForWeek(weekStart) {
+  const weekEnd = addDays(weekStart, 6); // Sunday midnight (inclusive for midnight dates)
+  const result  = [];
+  calendars.forEach(cal => {
+    if (!cal.visible) return;
+    cal.events.forEach(ev => {
+      if (!ev.startAllDay || !ev.start) return;
+      if (searchQuery) {
+        const haystack = [ev.title, ev.location, ev.description].join(' ').toLowerCase();
+        if (!haystack.includes(searchQuery)) return;
+      }
+      // DTEND for all-day events is exclusive — last day = ev.end - 1
+      const evLastDay = (ev.endAllDay && ev.end) ? addDays(ev.end, -1) : (ev.end || ev.start);
+      if (ev.start <= weekEnd && evLastDay >= weekStart) {
+        result.push({ event: ev, cal });
+      }
     });
   });
   result.sort((a, b) => a.event.start - b.event.start);
