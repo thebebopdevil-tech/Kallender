@@ -884,6 +884,94 @@ function openCalColorPicker(cal, anchorEl) {
   }, 0);
 }
 
+// ── Mini month calendar ───────────────────────────────────────────────────────
+
+function renderMiniCal() {
+  const container = document.getElementById('mini-cal');
+  if (!container) return;
+
+  const today      = new Date(); today.setHours(0, 0, 0, 0);
+  const numWeeks   = getNumWeeks();
+  const viewEnd    = addDays(currentWeekStart, numWeeks * 7 - 1);
+
+  // Collect days with events in the displayed month (for dot indicators)
+  const eventDays = new Set();
+  calendars.forEach(cal => {
+    if (!cal.visible) return;
+    cal.events.forEach(ev => {
+      if (!ev.start) return;
+      if (ev.start.getFullYear() === miniCalYear && ev.start.getMonth() === miniCalMonth) {
+        eventDays.add(ev.start.getDate());
+      }
+    });
+  });
+
+  const firstOfMonth = new Date(miniCalYear, miniCalMonth, 1);
+  const daysInMonth  = new Date(miniCalYear, miniCalMonth + 1, 0).getDate();
+  const startDow     = (firstOfMonth.getDay() + 6) % 7; // 0=Mon … 6=Sun
+  const monthLabel   = firstOfMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  // Build HTML
+  let html = `
+    <div class="mini-cal-hdr">
+      <button class="mini-cal-nav" data-dir="-1" aria-label="Previous month">&#8249;</button>
+      <span class="mini-cal-title">${monthLabel}</span>
+      <button class="mini-cal-nav" data-dir="1"  aria-label="Next month">&#8250;</button>
+    </div>
+    <div class="mini-cal-grid">`;
+
+  // Day-of-week headers: M T W T F S S
+  ['M','T','W','T','F','S','S'].forEach(d => {
+    html += `<div class="mini-dow">${d}</div>`;
+  });
+
+  // Leading empty cells
+  for (let i = 0; i < startDow; i++) {
+    html += '<div class="mini-day empty"></div>';
+  }
+
+  // Day cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date     = new Date(miniCalYear, miniCalMonth, d);
+    const isToday  = date.getTime() === today.getTime();
+    const inView   = date >= currentWeekStart && date <= viewEnd;
+    const hasEvent = eventDays.has(d);
+    const isoDate  = `${miniCalYear}-${String(miniCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls = ['mini-day',
+      isToday ? 'mini-today' : '',
+      inView  ? 'mini-in-view' : '',
+    ].filter(Boolean).join(' ');
+
+    html += `<div class="${cls}" data-date="${isoDate}">
+      <span class="mini-day-num">${d}</span>
+      ${hasEvent ? '<span class="mini-dot"></span>' : ''}
+    </div>`;
+  }
+
+  html += '</div>'; // end .mini-cal-grid
+  container.innerHTML = html;
+
+  // Month navigation
+  container.querySelectorAll('.mini-cal-nav').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      miniCalMonth += parseInt(btn.dataset.dir, 10);
+      if (miniCalMonth < 0)  { miniCalMonth = 11; miniCalYear--; }
+      if (miniCalMonth > 11) { miniCalMonth = 0;  miniCalYear++; }
+      renderMiniCal();
+    });
+  });
+
+  // Click a day → navigate main grid to that week
+  container.querySelectorAll('.mini-day[data-date]').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const [y, m, d] = cell.dataset.date.split('-').map(Number);
+      currentWeekStart = getWeekStart(new Date(y, m - 1, d));
+      renderWeek();
+    });
+  });
+}
+
 // ── Planner Rendering ─────────────────────────────────────────────────────────
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
