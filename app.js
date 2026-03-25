@@ -1226,6 +1226,20 @@ function escapeHtml(str) {
 }
 
 /**
+ * linkifyLocation — smart handler for the LOCATION field.
+ * • If the value already contains a URL (http/https) → delegate to linkifyText
+ *   so the link is rendered inline exactly as-is.
+ * • Otherwise treat the whole string as a physical address and wrap it in a
+ *   Google Maps search link (works for full addresses, venue names, cities, etc.)
+ */
+function linkifyLocation(str) {
+  if (!str) return '';
+  if (/https?:\/\//i.test(str)) return linkifyText(str);
+  const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(str);
+  return `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(str)}</a>`;
+}
+
+/**
  * linkifyText — escapes str for safe HTML insertion, then wraps every
  * http/https URL it finds in a <a> that opens in a new tab.
  * Non-URL text is HTML-escaped so this is safe to set as innerHTML.
