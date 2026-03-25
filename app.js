@@ -1142,7 +1142,7 @@ function openPopup(ev, cal) {
   const locRow = document.getElementById('popup-location-row');
   if (ev.location) {
     locRow.style.display = '';
-    document.getElementById('popup-location').innerHTML = linkifyText(ev.location);
+    document.getElementById('popup-location').innerHTML = linkifyLocation(ev.location);
   } else {
     locRow.style.display = 'none';
   }
