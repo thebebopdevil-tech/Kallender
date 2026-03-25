@@ -10,7 +10,7 @@
  * Bump CACHE_VERSION whenever you want all clients to refetch everything.
  */
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE = `kallendar-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
@@ -22,6 +22,10 @@ const PRECACHE_ASSETS = [
   './manifest.json',
   './icon-192.svg',
   './icon-512.svg',
+  './favicon.svg',
+  './favicon-32.png',
+  './favicon-16.png',
+  './apple-touch-icon.png',
 ];
 
 // ── Install: pre-cache everything ────────────────────────────────────────────
