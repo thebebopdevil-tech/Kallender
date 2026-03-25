@@ -732,11 +732,12 @@ function handleFiles(files) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const events = parseICS(e.target.result);
+        const { events, calendarColor } = parseICS(e.target.result);
         const id    = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
         const name  = file.name.replace(/\.ics$/i, '');
-        const color = PALETTE[calendars.length % PALETTE.length];
-        calendars.push({ id, name, color, events, visible: true, type: 'file' });
+        // Prefer the color declared in the iCal file; fall back to palette rotation
+        const color = calendarColor || PALETTE[calendars.length % PALETTE.length];
+        calendars.push({ id, name, color, icsColor: calendarColor || null, events, visible: true, type: 'file' });
         loaded++;
         if (loaded === files.length) {
           saveToStorage();
