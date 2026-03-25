@@ -453,10 +453,34 @@ input {
   border-radius: 50%;
   background: var(--cal-color);
   display: block;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+.cal-dot:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.08);
+}
+[data-theme="dark"] .cal-dot:hover {
+  box-shadow: 0 0 0 3px rgba(255,255,255,.12);
 }
 .cal-item.cal-hidden .cal-dot {
   background: transparent;
   border: 2px solid var(--cal-color);
+}
+
+/* ── Calendar color picker popover ───────────────────────────────────────────── */
+.cal-color-popover {
+  position: absolute;
+  z-index: 600;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 158px; /* fits 5 × 26px swatches + gaps */
 }
 
 .cal-name {
