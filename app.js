@@ -948,25 +948,14 @@ function updateTimeIndicator() {
 
 // ── Event colour resolution ───────────────────────────────────────────────────
 
+// Per-event colour extraction from Google Calendar's basic.ics feed is not
+// supported — Google does not include color data in the iCal export.
+// All pills use the calendar's own color (cal.color) set by the user.
+// resolveEventColor is kept only for forward-compat with parsers that do
+// include per-event color (e.g. Apple Calendar file imports via X-APPLE-CALENDAR-COLOR).
 function resolveEventColor(ev) {
-  // New field: resolved to hex by ical-parser.js at parse time
-  if (ev.color) return ev.color;
-
-  // Backward-compat: events stored in localStorage before the parser rewrite
-  // still carry colorRaw / categories — resolve them on the fly.
-  if (ev.colorRaw) {
-    const c = ev.colorRaw.trim();
-    if (/^#[0-9A-Fa-f]{3,8}$/.test(c)) return c.slice(0, 7);
-    const byName = ICS_COLOR_MAP && ICS_COLOR_MAP[c.toLowerCase()];
-    if (byName) return byName;
-  }
-  if (ev.categories) {
-    for (const cat of ev.categories.split(',')) {
-      const byName = ICS_COLOR_MAP && ICS_COLOR_MAP[cat.trim().toLowerCase()];
-      if (byName) return byName;
-    }
-  }
-  return null;
+  // Parser stores a resolved hex in ev.color when available
+  return ev.color || null;
 }
 
 function renderGrid() {
