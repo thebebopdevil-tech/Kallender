@@ -919,6 +919,46 @@ function updateWeekHeader() {
       : `Week ${startWeek}–${endWeek}${yearStr}`;
 }
 
+// ── Today time indicator ──────────────────────────────────────────────────────
+
+function updateTimeIndicator() {
+  // Remove any existing indicators
+  document.querySelectorAll('.time-indicator').forEach(el => el.remove());
+  if (!showTimeIndicator) return;
+
+  const now   = new Date();
+  const today = new Date(now); today.setHours(0, 0, 0, 0);
+  const pad   = n => String(n).padStart(2, '0');
+  const key   = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+  const cell  = document.querySelector(`.planner-cell[data-date="${key}"]`);
+  if (!cell) return; // today not in current rendered range
+
+  const pct = (now.getHours() * 60 + now.getMinutes()) / 1440 * 100;
+  const indicator = document.createElement('div');
+  indicator.className = 'time-indicator';
+  indicator.style.top = `${pct}%`;
+  cell.appendChild(indicator);
+}
+
+// ── Event colour resolution ───────────────────────────────────────────────────
+
+function resolveEventColor(ev) {
+  if (ev.colorRaw) {
+    const c = ev.colorRaw.trim();
+    if (/^#[0-9A-Fa-f]{3,8}$/.test(c)) return c;          // hex value
+    const mapped = GOOGLE_COLOR_MAP[c.toLowerCase()];
+    if (mapped) return mapped;                               // color name
+  }
+  if (ev.categories) {
+    // Google Calendar encodes the event color as a CATEGORIES keyword
+    for (const cat of ev.categories.split(',')) {
+      const mapped = GOOGLE_COLOR_MAP[cat.trim().toLowerCase()];
+      if (mapped) return mapped;
+    }
+  }
+  return null; // fall back to calendar color
+}
+
 function renderGrid() {
   const container  = document.getElementById('week-grid');
   const today      = new Date();
