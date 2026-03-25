@@ -1030,6 +1030,7 @@ function renderGrid() {
   container.appendChild(planner);
   container.scrollLeft = BUFFER_WEEKS * colWidth;
   setTimeout(() => { _suppressScroll = false; }, 50);
+  updateTimeIndicator();
 }
 
 // Lightweight pill refresh — used by search so the grid never scrolls
