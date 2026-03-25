@@ -715,6 +715,7 @@ input {
 
 /* Day cells */
 .planner-cell {
+  position: relative;       /* needed for .time-indicator absolute positioning */
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   padding: 6px 7px;
