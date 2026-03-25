@@ -949,20 +949,24 @@ function updateTimeIndicator() {
 // ── Event colour resolution ───────────────────────────────────────────────────
 
 function resolveEventColor(ev) {
+  // New field: resolved to hex by ical-parser.js at parse time
+  if (ev.color) return ev.color;
+
+  // Backward-compat: events stored in localStorage before the parser rewrite
+  // still carry colorRaw / categories — resolve them on the fly.
   if (ev.colorRaw) {
     const c = ev.colorRaw.trim();
-    if (/^#[0-9A-Fa-f]{3,8}$/.test(c)) return c;          // hex value
-    const mapped = GOOGLE_COLOR_MAP[c.toLowerCase()];
-    if (mapped) return mapped;                               // color name
+    if (/^#[0-9A-Fa-f]{3,8}$/.test(c)) return c.slice(0, 7);
+    const byName = ICS_COLOR_MAP && ICS_COLOR_MAP[c.toLowerCase()];
+    if (byName) return byName;
   }
   if (ev.categories) {
-    // Google Calendar encodes the event color as a CATEGORIES keyword
     for (const cat of ev.categories.split(',')) {
-      const mapped = GOOGLE_COLOR_MAP[cat.trim().toLowerCase()];
-      if (mapped) return mapped;
+      const byName = ICS_COLOR_MAP && ICS_COLOR_MAP[cat.trim().toLowerCase()];
+      if (byName) return byName;
     }
   }
-  return null; // fall back to calendar color
+  return null;
 }
 
 function renderGrid() {
