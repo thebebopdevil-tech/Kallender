@@ -70,9 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
   bindScroll();
   bindResize();
   renderWeek();
-  // Sync all URL subscriptions on load, then every 30 min
+  // Sync all URL subscriptions on load, then on interval
   syncAllSubscribed();
   setInterval(syncAllSubscribed, SYNC_INTERVAL_MS);
+
+  // Time indicator: update every minute
+  setInterval(updateTimeIndicator, 60 * 1000);
 });
 
 // ── Mobile helpers ────────────────────────────────────────────────────────────
