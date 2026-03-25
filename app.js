@@ -46,14 +46,15 @@ const SVG_WARN = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" st
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-let calendars        = [];
-let preferredWeeks   = DEFAULT_WEEKS;
-let currentWeekStart = getWeekStart(new Date());
-let renderedStart    = null;
-let colWidth         = 160;
-let searchQuery      = '';
-let activePopupEvent = null;
-let _suppressScroll  = false;
+let calendars           = [];
+let preferredWeeks      = DEFAULT_WEEKS;
+let currentWeekStart    = getWeekStart(new Date());
+let renderedStart       = null;
+let colWidth            = 160;
+let searchQuery         = '';
+let activePopupEvent    = null;
+let _suppressScroll     = false;
+let showTimeIndicator   = true;
 
 const syncingIds     = new Set(); // cal ids currently being fetched
 let subSelectedColor = PALETTE[0]; // colour chosen in subscribe dialog
