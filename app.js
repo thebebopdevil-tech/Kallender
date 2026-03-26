@@ -54,22 +54,51 @@ let subSelectedColor = PALETTE[0]; // colour chosen in subscribe dialog
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadFromStorage();
-  importFromURL();       // must run before first render so shared cals are included
+document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(getSavedTheme());
+  bindAuthUI();
+
+  // Check for an existing Supabase session (fast — reads from localStorage token)
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    bootApp();
+  } else {
+    document.getElementById('auth-screen').hidden = false;
+  }
+
+  // React to sign-in (from auth form) and sign-out
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && !_appBooted) {
+      currentUser = session.user;
+      bootApp();
+    } else if (event === 'SIGNED_OUT') {
+      // Reload to clear all in-memory state cleanly
+      window.location.reload();
+    }
+  });
+});
+
+async function bootApp() {
+  if (_appBooted) return;
+  _appBooted = true;
+
+  loadFromStorage();
+  await cloudLoadCalendars();    // merge cloud → local
+  importFromURL();               // handle ?calendars= share links
+  updateSidebarUser();
   renderCalendarList();
   bindUI();
   bindScroll();
   bindResize();
   renderWeek();
-  // Sync all URL subscriptions on load, then on interval
   syncAllSubscribed();
   setInterval(syncAllSubscribed, SYNC_INTERVAL_MS);
-
-  // Time indicator: update every minute
   setInterval(updateTimeIndicator, 60 * 1000);
-});
+
+  document.getElementById('auth-screen').hidden = true;
+  document.getElementById('app').hidden = false;
+}
 
 // ── Mobile helpers ────────────────────────────────────────────────────────────
 
