@@ -1174,8 +1174,11 @@ function renderGrid() {
   colWidth         = computeColWidth();
   const labelW     = getLabelWidth();
 
+  // Density tier drives pill font size, time visibility, and title wrapping
+  const densityClass = colWidth >= 180 ? 'pill-wide' : colWidth >= 120 ? 'pill-medium' : 'pill-narrow';
+
   const planner = document.createElement('div');
-  planner.className = 'planner-grid';
+  planner.className = `planner-grid ${densityClass}`;
   planner.style.gridTemplateColumns = `${labelW}px repeat(${totalCols}, ${colWidth}px)`;
   planner.style.width = `${labelW + totalCols * colWidth}px`;
 
