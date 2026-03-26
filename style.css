@@ -1062,22 +1062,23 @@ kbd {
   font-size: 11px;
 }
 
-/* Event pills */
+/* ── Event pills ──────────────────────────────────────────────────────────────── */
+
+/* Density custom property — set per tier on the grid, inherited by all pills */
+.planner-grid              { --pill-fs: 11px; }
+.planner-grid.pill-wide    { --pill-fs: 12px; }
+.planner-grid.pill-narrow  { --pill-fs: 10px; }
+
 .event-pill {
-  font-size: 11px;
-  font-weight: 500;
   padding: 3px 6px;
   border-radius: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   cursor: pointer;
   color: var(--text);
   flex-shrink: 0;
-  line-height: 1.4;
   min-height: 22px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 1px;
   transition: filter .12s, box-shadow .12s;
   touch-action: manipulation;
 }
@@ -1089,9 +1090,44 @@ kbd {
   filter: brightness(1.2);
 }
 
+/* Title span — truncates by default; wide tier overrides to allow wrapping */
+.pill-title {
+  font-size: var(--pill-fs, 11px);
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Time span — hidden in narrow tier */
+.pill-time {
+  font-size: calc(var(--pill-fs, 11px) - 1px);
+  font-weight: 400;
+  line-height: 1.2;
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
+/* ── Wide tier (≥180 px columns): full title, 2-line wrap, time visible ──────── */
+.pill-wide .pill-title {
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ── Narrow tier (<120 px columns): hide time, tighter font ─────────────────── */
+.pill-narrow .pill-time {
+  display: none;
+}
+
 /* Search match highlight */
 .event-pill.search-match {
   box-shadow: 0 0 0 1.5px currentColor, 0 1px 5px rgba(0,0,0,.15);
+}
+.event-pill.search-match .pill-title {
   font-weight: 600;
 }
 
