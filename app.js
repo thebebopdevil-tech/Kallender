@@ -1143,6 +1143,7 @@ function openCalColorPicker(cal, anchorEl) {
       e.stopPropagation();
       cal.color = hex;
       saveToStorage();
+      cloudSaveCalendar(cal);    // fire-and-forget color update
       renderCalendarList();
       refreshEventPills();
       popover.remove();
