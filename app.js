@@ -503,6 +503,7 @@ function submitSubscription() {
 
   calendars.push(cal);
   saveToStorage();
+  cloudSaveCalendar(cal);    // fire-and-forget cloud write
   renderCalendarList();
   renderWeek();
   closeSubscribeDialog();
