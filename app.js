@@ -603,7 +603,7 @@ function bindUI() {
   searchInput.addEventListener('focus', () => {
     if (searchQuery) renderSearchDropdown(searchAllEvents(searchQuery));
   });
-  // Close dropdown on Escape
+  // Keyboard: close dropdown on Escape (global handler covers the rest)
   searchInput.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeSearchDropdown(); searchInput.blur(); }
   });
