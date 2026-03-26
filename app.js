@@ -627,12 +627,58 @@ function bindUI() {
     if (e.key === 'Enter') submitSubscription();
   });
 
-  // Escape key closes any open overlay
+  // ── Global keyboard shortcuts ────────────────────────────────────────────────
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      // Always close everything on Escape
       closePopup();
       closeSubscribeDialog();
+      closeSearchDropdown();
+      document.getElementById('kb-popup').hidden = true;
+      const si = document.getElementById('search-input');
+      if (si.value) {
+        si.value = '';
+        searchQuery = '';
+        document.getElementById('search-clear').style.display = 'none';
+        refreshEventPills();
+      }
+      si.blur();
+      return;
     }
+    // All other shortcuts: skip when focus is in an editable element
+    const tag = document.activeElement ? document.activeElement.tagName : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+        (document.activeElement && document.activeElement.isContentEditable)) return;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        currentWeekStart = addDays(currentWeekStart, -7 * getNumWeeks());
+        renderWeek();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        currentWeekStart = addDays(currentWeekStart, 7 * getNumWeeks());
+        renderWeek();
+        break;
+      case 't': case 'T':
+        currentWeekStart = getWeekStart(new Date());
+        renderWeek();
+        break;
+      case 'f': case 'F':
+        e.preventDefault();
+        document.getElementById('search-input').focus();
+        break;
+      case '?':
+        toggleKbPopup();
+        break;
+    }
+  });
+
+  // "?" button
+  document.getElementById('kb-help-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    toggleKbPopup();
   });
 
   // Weeks selector
