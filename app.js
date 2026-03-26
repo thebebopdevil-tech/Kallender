@@ -1110,6 +1110,7 @@ function renderCalendarList() {
       openCalColorPicker(cal, e.currentTarget);
     });
     li.querySelector('.cal-remove').addEventListener('click', () => {
+      cloudDeleteCalendar(cal);    // fire-and-forget cloud delete
       calendars = calendars.filter(c => c.id !== cal.id);
       saveToStorage();
       renderCalendarList();
