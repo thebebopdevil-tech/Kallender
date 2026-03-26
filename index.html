@@ -43,6 +43,18 @@
         <div class="header-actions">
           <!-- Icon set by applyTheme() on load -->
           <button id="theme-toggle" class="icon-btn" title="Toggle dark mode" aria-label="Switch to dark mode"></button>
+          <button id="kb-help-btn" class="icon-btn kb-help-btn" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">?</button>
+          <div id="kb-popup" class="kb-popup" hidden role="dialog" aria-label="Keyboard shortcuts">
+            <div class="kb-popup-title">Keyboard shortcuts</div>
+            <dl class="kb-list">
+              <div class="kb-row"><dt><kbd>←</kbd></dt><dd>Previous weeks</dd></div>
+              <div class="kb-row"><dt><kbd>→</kbd></dt><dd>Next weeks</dd></div>
+              <div class="kb-row"><dt><kbd>T</kbd></dt><dd>Jump to today</dd></div>
+              <div class="kb-row"><dt><kbd>F</kbd></dt><dd>Focus search</dd></div>
+              <div class="kb-row"><dt><kbd>Esc</kbd></dt><dd>Clear search / close</dd></div>
+              <div class="kb-row"><dt><kbd>?</kbd></dt><dd>Show this help</dd></div>
+            </dl>
+          </div>
           <input type="file" id="file-input" accept=".ics,text/calendar" multiple hidden />
         </div>
       </div>
