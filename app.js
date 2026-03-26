@@ -352,8 +352,9 @@ function showToast(msg) {
   toast.textContent = msg;
   document.body.appendChild(toast);
 
-  // Trigger animation on next frame
-  requestAnimationFrame(() => toast.classList.add('toast-show'));
+  // Double-RAF ensures the browser has painted the initial state before
+  // adding toast-show, so the CSS transition actually plays.
+  requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('toast-show')));
 
   setTimeout(() => {
     toast.classList.remove('toast-show');
