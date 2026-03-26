@@ -373,7 +373,8 @@ function generateShareURL() {
 
   const json    = JSON.stringify({ v: 1, calendars: items });
   const encoded = btoa(unescape(encodeURIComponent(json)));
-  return window.location.origin + window.location.pathname + '?calendars=' + encoded;
+  // encodeURIComponent the base64 so +, / and = are safe in a URL query string
+  return window.location.origin + window.location.pathname + '?calendars=' + encodeURIComponent(encoded);
 }
 
 function copyShareLink() {
