@@ -1072,6 +1072,22 @@ function closeSearchDropdown() {
   document.getElementById('search-dropdown').hidden = true;
 }
 
+function toggleKbPopup() {
+  const popup = document.getElementById('kb-popup');
+  popup.hidden = !popup.hidden;
+  if (!popup.hidden) {
+    // Close on next outside click
+    setTimeout(() => {
+      document.addEventListener('click', function onOutside(e) {
+        if (!popup.contains(e.target) && e.target.id !== 'kb-help-btn') {
+          popup.hidden = true;
+        }
+        document.removeEventListener('click', onOutside);
+      });
+    }, 0);
+  }
+}
+
 function navigateToSearchResult(ev) {
   // Clear search state so all events render normally
   searchQuery = '';
