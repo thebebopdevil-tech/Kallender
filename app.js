@@ -1323,12 +1323,25 @@ function getAllDayEventsForWeek(weekStart) {
 function createEventPill(ev, cal) {
   const pill  = document.createElement('div');
   pill.className = searchQuery ? 'event-pill search-match' : 'event-pill';
-  // Use calendar color for all events (per-event color unavailable in Google iCal feeds).
-  // Apple Calendar file imports may surface ev.color via the parser; use it if present.
   const color = resolveEventColor(ev) || cal.color;
   pill.style.cssText = `background:${hexToRgba(color, 0.18)};border-left:3px solid ${color};`;
-  pill.textContent = ev.title || '(No title)';
-  pill.title       = ev.title || '(No title)';
+
+  const titleEl = document.createElement('span');
+  titleEl.className   = 'pill-title';
+  titleEl.textContent = ev.title || '(No title)';
+  pill.appendChild(titleEl);
+
+  // Show start time for timed (non-all-day) events
+  if (!ev.startAllDay && ev.start) {
+    const timeEl = document.createElement('span');
+    timeEl.className   = 'pill-time';
+    timeEl.textContent = formatTime(ev.start);
+    pill.appendChild(timeEl);
+  }
+
+  // Tooltip shows full title + time for truncated pills
+  const timeStr = (!ev.startAllDay && ev.start) ? ` · ${formatTime(ev.start)}` : '';
+  pill.title = (ev.title || '(No title)') + timeStr;
   pill.addEventListener('click', e => { e.stopPropagation(); openPopup(ev, cal); });
   return pill;
 }
