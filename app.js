@@ -44,6 +44,8 @@ let searchQuery         = '';
 let activePopupEvent    = null;
 let _suppressScroll     = false;
 let showTimeIndicator   = true;
+let currentUser         = null;   // set by Supabase auth
+let _appBooted          = false;  // guard against double boot
 let miniCalYear         = new Date().getFullYear();
 let miniCalMonth        = new Date().getMonth();
 
