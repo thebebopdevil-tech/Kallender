@@ -1019,7 +1019,9 @@ function handleFiles(files) {
         const name  = file.name.replace(/\.ics$/i, '');
         // Prefer the color declared in the iCal file; fall back to palette rotation
         const color = calendarColor || PALETTE[calendars.length % PALETTE.length];
-        calendars.push({ id, name, color, icsColor: calendarColor || null, events, visible: true, type: 'file' });
+        const newCal = { id, name, color, icsColor: calendarColor || null, events, visible: true, type: 'file' };
+        calendars.push(newCal);
+        cloudSaveCalendar(newCal);  // fire-and-forget cloud write
         loaded++;
         if (loaded === files.length) {
           saveToStorage();
