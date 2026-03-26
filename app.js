@@ -539,6 +539,7 @@ async function syncCalendar(cal) {
     // Auto-detect name from calendar data if the user left it blank
     if (!cal.name) {
       cal.name = extractCalName(icsText) || new URL(cal.url).hostname;
+      cloudSaveCalendar(cal);   // persist auto-detected name to cloud
     }
 
     saveToStorage();
