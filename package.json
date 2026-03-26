@@ -1,0 +1,9 @@
+{
+  "name": "kallendar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-only PWA week-based calendar",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.0"
+  }
+}
