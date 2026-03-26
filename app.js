@@ -173,6 +173,206 @@ function saveToStorage() {
   localStorage.setItem('kallender_calendars', JSON.stringify(calendars));
 }
 
+// ── Auth UI ────────────────────────────────────────────────────────────────────
+
+function bindAuthUI() {
+  // Sign-up form
+  document.getElementById('su-btn').addEventListener('click', handleSignUp);
+  ['su-email', 'su-password', 'su-confirm'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSignUp();
+    });
+  });
+
+  // Sign-in form
+  document.getElementById('si-btn').addEventListener('click', handleSignIn);
+  ['si-email', 'si-password'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSignIn();
+    });
+  });
+
+  // View toggles
+  document.getElementById('switch-to-signin').addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('auth-signup').hidden = true;
+    document.getElementById('auth-signin').hidden = false;
+  });
+  document.getElementById('switch-to-signup').addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('auth-signin').hidden = true;
+    document.getElementById('auth-signup').hidden = false;
+  });
+
+  // Forgot password
+  document.getElementById('forgot-password-link').addEventListener('click', async e => {
+    e.preventDefault();
+    const email = document.getElementById('si-email').value.trim();
+    if (!email) { setAuthError('si-error', 'Enter your email above first.'); return; }
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname,
+    });
+    if (error) {
+      setAuthError('si-error', error.message);
+    } else {
+      setAuthError('si-error', '');
+      showToast('Password reset email sent!');
+    }
+  });
+
+  // Sign out button (in sidebar)
+  document.getElementById('signout-btn').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    // onAuthStateChange → SIGNED_OUT → window.location.reload()
+  });
+}
+
+async function handleSignUp() {
+  const email    = document.getElementById('su-email').value.trim();
+  const password = document.getElementById('su-password').value;
+  const confirm  = document.getElementById('su-confirm').value;
+  setAuthError('su-error', '');
+  setAuthInfo('su-info', '');
+
+  if (!email || !password || !confirm) { setAuthError('su-error', 'Please fill in all fields.'); return; }
+  if (password !== confirm)            { setAuthError('su-error', 'Passwords do not match.'); return; }
+  if (password.length < 6)            { setAuthError('su-error', 'Password must be at least 6 characters.'); return; }
+
+  const btn = document.getElementById('su-btn');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  btn.disabled = false; btn.textContent = 'Sign up';
+
+  if (error) {
+    setAuthError('su-error', error.message);
+  } else {
+    setAuthInfo('su-info', '✓ Check your email to confirm your account.');
+  }
+}
+
+async function handleSignIn() {
+  const email    = document.getElementById('si-email').value.trim();
+  const password = document.getElementById('si-password').value;
+  setAuthError('si-error', '');
+
+  if (!email || !password) { setAuthError('si-error', 'Please fill in all fields.'); return; }
+
+  const btn = document.getElementById('si-btn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Sign in';
+
+  if (error) setAuthError('si-error', error.message);
+  // On success: onAuthStateChange fires SIGNED_IN → bootApp()
+}
+
+function setAuthError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.hidden = !msg;
+}
+
+function setAuthInfo(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.hidden = !msg;
+}
+
+function updateSidebarUser() {
+  const wrap = document.getElementById('sidebar-user');
+  const emailEl = document.getElementById('user-email-display');
+  if (currentUser) {
+    emailEl.textContent = currentUser.email;
+    wrap.hidden = false;
+  } else {
+    wrap.hidden = true;
+  }
+}
+
+// ── Supabase cloud sync ────────────────────────────────────────────────────────
+//
+// supabaseId: UUID assigned by Supabase when a calendar row is created.
+// Stored on the local calendar object so we can update/delete the right row.
+
+async function cloudLoadCalendars() {
+  if (!currentUser) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('calendars')
+      .select('*')
+      .order('created_at');
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      // First login — push any locally-cached calendars up to the cloud
+      if (calendars.length > 0) {
+        for (const cal of calendars) await cloudSaveCalendar(cal);
+      }
+      return;
+    }
+
+    // Build lookup maps from local cache
+    const bySid = Object.fromEntries(calendars.filter(c => c.supabaseId).map(c => [c.supabaseId, c]));
+    const byUrl = Object.fromEntries(calendars.filter(c => c.url).map(c => [c.url, c]));
+
+    // Merge: cloud drives name/url/color/type; local cache keeps events + ui state
+    calendars = data.map(row => {
+      const local = bySid[row.id] || byUrl[row.url] || {};
+      return {
+        id:         local.id || ('cal_' + Date.now() + '_' + Math.random().toString(36).slice(2)),
+        supabaseId: row.id,
+        name:       row.name,
+        url:        row.url   || '',
+        color:      row.color || PALETTE[0],
+        type:       row.type  || 'url',
+        events:     local.events     || [],
+        visible:    local.visible    !== undefined ? local.visible : true,
+        lastSynced: local.lastSynced || null,
+        syncError:  local.syncError  || false,
+        icsColor:   local.icsColor   || null,
+      };
+    });
+    saveToStorage();
+  } catch (e) {
+    console.warn('[Kallendar] cloudLoadCalendars failed, using local cache:', e.message);
+  }
+}
+
+async function cloudSaveCalendar(cal) {
+  if (!currentUser) return;
+  const payload = {
+    user_id: currentUser.id,
+    name:    cal.name || '(no name)',
+    url:     cal.url  || null,
+    color:   cal.color,
+    type:    cal.type || 'url',
+  };
+  if (cal.supabaseId) payload.id = cal.supabaseId;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('calendars')
+      .upsert(payload, { onConflict: 'id' })
+      .select()
+      .single();
+    if (!error && data && !cal.supabaseId) {
+      cal.supabaseId = data.id;
+      saveToStorage(); // persist the new supabaseId
+    }
+  } catch (e) {
+    console.warn('[Kallendar] cloudSaveCalendar failed:', e.message);
+  }
+}
+
+async function cloudDeleteCalendar(cal) {
+  if (!currentUser || !cal.supabaseId) return;
+  try {
+    await supabaseClient.from('calendars').delete().eq('id', cal.supabaseId);
+  } catch (e) {
+    console.warn('[Kallendar] cloudDeleteCalendar failed:', e.message);
+  }
+}
+
 function getSavedTheme() {
   const saved = localStorage.getItem('kallender_theme');
   if (saved) return saved;
