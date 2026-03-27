@@ -217,7 +217,7 @@ function bindAuthUI() {
     const email = document.getElementById('si-email').value.trim();
     if (!email) { setAuthError('si-error', 'Enter your email above first.'); return; }
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + window.location.pathname,
+      redirectTo: 'https://kallendar-app.vercel.app',
     });
     if (error) {
       setAuthError('si-error', error.message);
