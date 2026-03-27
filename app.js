@@ -184,6 +184,13 @@ function bindAuthUI() {
     });
   });
 
+  // Pre-fill email fields from last used email
+  const lastEmail = localStorage.getItem('kallendar_last_email') || '';
+  if (lastEmail) {
+    document.getElementById('si-email').value = lastEmail;
+    document.getElementById('su-email').value = lastEmail;
+  }
+
   // Sign-in form
   document.getElementById('si-btn').addEventListener('click', handleSignIn);
   ['si-email', 'si-password'].forEach(id => {
