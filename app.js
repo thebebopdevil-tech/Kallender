@@ -231,7 +231,7 @@ function bindAuthUI() {
   const googleHandler = async () => {
     await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname },
+      options: { redirectTo: 'https://kallendar-app.vercel.app' },
     });
   };
   document.getElementById('su-google-btn').addEventListener('click', googleHandler);
