@@ -262,8 +262,12 @@ async function handleSignIn() {
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   btn.disabled = false; btn.textContent = 'Sign in';
 
-  if (error) setAuthError('si-error', error.message);
-  // On success: onAuthStateChange fires SIGNED_IN → bootApp()
+  if (error) {
+    setAuthError('si-error', error.message);
+  } else {
+    localStorage.setItem('kallendar_last_email', email);
+    // On success: onAuthStateChange fires SIGNED_IN → bootApp()
+  }
 }
 
 function setAuthError(id, msg) {
