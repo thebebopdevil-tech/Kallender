@@ -227,6 +227,16 @@ function bindAuthUI() {
     }
   });
 
+  // Google OAuth buttons
+  const googleHandler = async () => {
+    await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + window.location.pathname },
+    });
+  };
+  document.getElementById('su-google-btn').addEventListener('click', googleHandler);
+  document.getElementById('si-google-btn').addEventListener('click', googleHandler);
+
   // Sign out button (in sidebar)
   document.getElementById('signout-btn').addEventListener('click', async () => {
     await supabaseClient.auth.signOut();
