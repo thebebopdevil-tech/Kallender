@@ -58,16 +58,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(getSavedTheme());
   bindAuthUI();
 
-  // Check for an existing Supabase session (fast — reads from localStorage token)
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session?.user) {
-    currentUser = session.user;
-    bootApp();
-  } else {
-    document.getElementById('auth-screen').hidden = false;
-  }
-
-  // React to sign-in (from auth form) and sign-out
+  // Register auth listener BEFORE getSession() so no SIGNED_IN event is missed
+  // (Supabase v2 processes the OAuth #access_token hash asynchronously on init;
+  //  with flowType:'implicit' the event may fire before or after getSession resolves)
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && !_appBooted) {
       currentUser = session.user;
@@ -77,6 +70,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.location.reload();
     }
   });
+
+  // Also check for an already-stored session (e.g. page refresh)
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session?.user && !_appBooted) {
+    currentUser = session.user;
+    bootApp();
+  } else if (!session?.user) {
+    document.getElementById('auth-screen').hidden = false;
+  }
 });
 
 async function bootApp() {
