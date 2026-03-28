@@ -13,4 +13,9 @@
 const SUPABASE_URL      = 'https://uawmekcnhlaktffvfrmb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_kDDb5gtzxUIhISu_HVhK0Q_N8RAVLjt';
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    flowType: 'implicit',
+    detectSessionInUrl: true,
+  },
+});
