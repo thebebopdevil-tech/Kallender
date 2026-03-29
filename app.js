@@ -58,9 +58,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(getSavedTheme());
   bindAuthUI();
 
-  // Register auth listener BEFORE getSession() so no SIGNED_IN event is missed
-  // (Supabase v2 processes the OAuth #access_token hash asynchronously on init;
-  //  with flowType:'implicit' the event may fire before or after getSession resolves)
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && !_appBooted) {
       currentUser = session.user;
