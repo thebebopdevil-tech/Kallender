@@ -40,7 +40,7 @@
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────────── */
-html, body { height: 100%; overflow: hidden; }
+html, body { height: 100%; overflow: hidden; overflow-x: hidden; }
 
 body {
   font-family: var(--font);
