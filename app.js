@@ -19,7 +19,7 @@ const WEEK_OPTIONS      = [1, 2, 3, 4, 5, 6, 8, 10, 12];
 const DEFAULT_WEEKS     = 5;
 const BUFFER_WEEKS      = 12;
 const PROXY_URL         = '/api/proxy';
-const SYNC_INTERVAL_MS  = 30 * 1000; // 30 seconds (testing)
+const SYNC_INTERVAL_MS  = 60 * 1000; // 60 seconds
 
 // SVG icon strings ─────────────────────────────────────────────────────────────
 
