@@ -1105,9 +1105,14 @@ kbd {
   overflow: auto;           /* scroll both axes */
   overflow-x: auto;         /* explicit for safari */
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y; /* allow native touch scroll in both directions */
-  /* prevent scroll chaining to the page body */
-  overscroll-behavior: contain;
+  touch-action: pan-x;      /* horizontal swipe only — no vertical scroll propagation */
+  overscroll-behavior: contain; /* prevent scroll chaining to the page body */
+}
+
+/* Prevent horizontal scroll/swipe bleed on non-grid elements */
+#sidebar, header, nav, .auth-screen {
+  overflow-x: hidden;
+  touch-action: pan-y;
 }
 
 /* ── Planner Grid ────────────────────────────────────────────────────────────── */
