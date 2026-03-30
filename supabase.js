@@ -10,7 +10,7 @@
  * user can only access their own rows.
  */
 
-const SUPABASE_URL      = 'https://uawmekcnhlaktffvfrmb.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_kDDb5gtzxUIhISu_HVhK0Q_N8RAVLjt';
+const SUPABASE_URL      = 'https://nrgxsvkjfbodervuvhpv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZ3hzdmtqZmJvZGVydnV2aHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjkzMjksImV4cCI6MjA5MDEwNTMyOX0.mhUWbH-fxUPJ-iT1RzOKPWcDxb7SVy4wP5u8bywT7dA';
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
