@@ -84,6 +84,10 @@ async function bootApp() {
   if (_appBooted) return;
   _appBooted = true;
 
+  // Show the app immediately — don't let async work below delay this
+  document.getElementById('auth-screen').hidden = true;
+  document.getElementById('app').hidden = false;
+
   loadFromStorage();
   await cloudLoadCalendars();    // merge cloud → local
   importFromURL();               // handle ?calendars= share links
@@ -96,9 +100,6 @@ async function bootApp() {
   syncAllSubscribed();
   setInterval(syncAllSubscribed, SYNC_INTERVAL_MS);
   setInterval(updateTimeIndicator, 60 * 1000);
-
-  document.getElementById('auth-screen').hidden = true;
-  document.getElementById('app').hidden = false;
 }
 
 // ── Mobile helpers ────────────────────────────────────────────────────────────
