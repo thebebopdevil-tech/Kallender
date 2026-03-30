@@ -87,7 +87,9 @@ async function bootApp() {
 
   // Show the app immediately — don't let async work below delay this
   document.getElementById('auth-screen').hidden = true;
+  document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').hidden = false;
+  document.getElementById('app').style.display = '';
 
   loadFromStorage();
   await cloudLoadCalendars();    // merge cloud → local
