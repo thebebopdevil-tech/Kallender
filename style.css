@@ -1459,23 +1459,6 @@ kbd {
 }
 .popup-field a:hover { opacity: .75; }
 
-/* ── Drag over indicator ─────────────────────────────────────────────────────── */
-body.drag-over #calendar-area::after {
-  content: 'Drop .ics files here';
-  position: absolute;
-  inset: 0;
-  background: rgba(37,99,235,.07);
-  border: 2px dashed var(--accent);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--accent);
-  pointer-events: none;
-  z-index: 50;
-}
 
 /* ── Sidebar divider (between add-cal and config sections) ──────────────────── */
 .sidebar-divider {
