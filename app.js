@@ -61,10 +61,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // INITIAL_SESSION fires for stored sessions on page load; SIGNED_IN fires after
   // a fresh sign-in. Handle both so neither path can be missed.
   supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log('[Auth]', event, session?.user?.email);
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user && !_appBooted) {
       currentUser = session.user;
       bootApp();
-    } else if (event === 'SIGNED_OUT') {
+    } else if (event === 'SIGNED_OUT' && _appBooted) {
       window.location.reload();
     }
   });
