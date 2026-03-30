@@ -902,7 +902,15 @@ function bindScroll() {
 function bindResize() {
   let lastNumWeeks   = getNumWeeks();
   let lastInnerWidth = window.innerWidth;
+
   window.addEventListener('resize', () => {
+    // On mobile, auto-set preferredWeeks to match orientation
+    if (window.innerWidth < 900) {
+      const cap = getMobileCap();
+      preferredWeeks = cap;
+      localStorage.setItem('kallendar_weeks', preferredWeeks);
+    }
+
     updateWeeksSelector();
     const nowWeeks     = getNumWeeks();
     const widthChanged = window.innerWidth !== lastInnerWidth;
@@ -911,6 +919,18 @@ function bindResize() {
       lastInnerWidth = window.innerWidth;
       renderWeek();
     }
+  });
+
+  // iOS fallback — orientationchange fires before innerWidth updates, so defer
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      if (window.innerWidth < 900) {
+        preferredWeeks = getMobileCap();
+        localStorage.setItem('kallendar_weeks', preferredWeeks);
+        updateWeeksSelector();
+        renderWeek();
+      }
+    }, 100);
   });
 }
 
