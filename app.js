@@ -710,39 +710,10 @@ function importFromURL() {
 // ── UI Bindings ───────────────────────────────────────────────────────────────
 
 function bindUI() {
-  // File import via file-input
-  document.getElementById('file-input').addEventListener('change', e => {
-    handleFiles(Array.from(e.target.files));
-    e.target.value = '';
-  });
-
   // Sidebar footer buttons
-  document.getElementById('sidebar-import-file-btn').addEventListener('click', () => {
-    closeSidebar();
-    document.getElementById('file-input').click();
-  });
   document.getElementById('sidebar-subscribe-btn').addEventListener('click', () => {
     closeSidebar();
     openSubscribeDialog();
-  });
-
-  // Drag-and-drop onto app area
-  const dropZone = document.getElementById('app');
-  dropZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    document.body.classList.add('drag-over');
-  });
-  dropZone.addEventListener('dragleave', e => {
-    if (!e.relatedTarget || e.relatedTarget === document.body)
-      document.body.classList.remove('drag-over');
-  });
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    document.body.classList.remove('drag-over');
-    const files = Array.from(e.dataTransfer.files).filter(f =>
-      f.name.endsWith('.ics') || f.type === 'text/calendar'
-    );
-    if (files.length) handleFiles(files);
   });
 
   // Navigation arrows
