@@ -854,20 +854,6 @@ function bindUI() {
   // Share button (Option A)
   document.getElementById('sidebar-share-btn').addEventListener('click', copyShareLink);
 
-  // Export / Import config (Option B)
-  document.getElementById('sidebar-export-btn').addEventListener('click', exportConfig);
-
-  const configFileInput = document.getElementById('config-file-input');
-  document.getElementById('sidebar-import-config-btn').addEventListener('click', () => {
-    configFileInput.value = '';
-    configFileInput.click();
-  });
-  configFileInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (file) importConfigFile(file);
-    e.target.value = '';
-  });
-
   // Time-indicator toggle
   const timeToggle = document.getElementById('time-indicator-toggle');
   if (timeToggle) {
