@@ -945,6 +945,15 @@ kbd {
 }
 .sidebar-add-item:hover { background: var(--surface-2); color: var(--text); }
 
+#ical-help-link {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  text-decoration: none;
+  padding: 2px 8px 4px;
+}
+#ical-help-link:hover { color: var(--text-2); text-decoration: underline; }
+
 /* ── Subscribe dialog ─────────────────────────────────────────────────────────── */
 .modal-overlay {
   display: none;
