@@ -58,22 +58,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(getSavedTheme());
   bindAuthUI();
 
+  // INITIAL_SESSION fires for stored sessions on page load; SIGNED_IN fires after
+  // a fresh sign-in. Handle both so neither path can be missed.
   supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && !_appBooted) {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user && !_appBooted) {
       currentUser = session.user;
       bootApp();
     } else if (event === 'SIGNED_OUT') {
-      // Reload to clear all in-memory state cleanly
       window.location.reload();
     }
   });
 
-  // Also check for an already-stored session (e.g. page refresh)
+  // Fallback: getSession() covers cases where onAuthStateChange fires before this
+  // handler is reached or where the event was already consumed.
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session?.user && !_appBooted) {
     currentUser = session.user;
     bootApp();
-  } else if (!session?.user) {
+  } else if (!session?.user && !_appBooted) {
     document.getElementById('auth-screen').hidden = false;
   }
 });
