@@ -73,7 +73,7 @@ input {
   height: 100%;
   overflow: hidden;
 }
-#app[hidden] { display: none; }
+[hidden] { display: none !important; }
 
 /* ── Auth screen ─────────────────────────────────────────────────────────────── */
 .auth-screen {
