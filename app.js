@@ -914,35 +914,6 @@ function bindResize() {
   });
 }
 
-// ── File Handling ─────────────────────────────────────────────────────────────
-
-function handleFiles(files) {
-  let loaded = 0;
-  files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const { events, calendarColor } = parseICS(e.target.result);
-        const id    = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-        const name  = file.name.replace(/\.ics$/i, '');
-        // Prefer the color declared in the iCal file; fall back to palette rotation
-        const color = calendarColor || PALETTE[calendars.length % PALETTE.length];
-        const newCal = { id, name, color, icsColor: calendarColor || null, events, visible: true, type: 'file' };
-        calendars.push(newCal);
-        cloudSaveCalendar(newCal);  // fire-and-forget cloud write
-        loaded++;
-        if (loaded === files.length) {
-          saveToStorage();
-          renderCalendarList();
-          renderWeek();
-        }
-      } catch (err) {
-        console.error('Failed to parse', file.name, err);
-      }
-    };
-    reader.readAsText(file);
-  });
-}
 
 // ── Calendar List Sidebar ─────────────────────────────────────────────────────
 
