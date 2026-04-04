@@ -716,6 +716,33 @@ function bindUI() {
     openSubscribeDialog();
   });
 
+  document.getElementById('add-swedish-holidays-btn').addEventListener('click', () => {
+    const SWEDISH_HOLIDAYS_URL = 'https://www.officeholidays.com/ics/sweden';
+    if (calendars.some(c => c.url === SWEDISH_HOLIDAYS_URL)) {
+      showToast('Swedish holidays already added');
+      return;
+    }
+    const id  = 'cal_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const cal = {
+      id,
+      name:       'Svenska helgdagar',
+      color:      '#ef4444',
+      events:     [],
+      visible:    true,
+      type:       'url',
+      url:        SWEDISH_HOLIDAYS_URL,
+      lastSynced: null,
+      syncError:  false,
+    };
+    calendars.push(cal);
+    saveToStorage();
+    cloudSaveCalendar(cal);
+    renderCalendarList();
+    renderWeek();
+    syncCalendar(cal);
+    closeSidebar();
+  });
+
   // Navigation arrows
   document.getElementById('prev-week').addEventListener('click', () => {
     currentWeekStart = addDays(currentWeekStart, -7 * getNumWeeks());
