@@ -1184,35 +1184,25 @@ kbd {
 }
 
 /* ── All-day row ─────────────────────────────────────────────────────────────── */
-.planner-allday-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border);
-  border-bottom: 2px solid var(--border);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: .3px;
-  text-transform: uppercase;
-  color: var(--text-2);
-  position: sticky;
-  left: 0;
-  z-index: 5;
+/* All-day row hidden — events now appear inside their day cells as .allday-chip */
+.planner-allday-label,
+.planner-allday-cell {
+  display: none;
 }
 
-.planner-allday-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 3px 5px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  border-bottom: 2px solid var(--border);
-  min-height: 28px;
+/* ── All-day chip (inside day cells) ────────────────────────────────────────── */
+.allday-chip {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff;
 }
-.planner-allday-cell.last-col { border-right: none; }
 
 /* Day label cells */
 .planner-day-label {
