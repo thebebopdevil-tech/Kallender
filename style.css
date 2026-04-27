@@ -1161,8 +1161,10 @@ kbd {
 
 /* ── Current-week column highlight ──────────────────────────────────────────── */
 .current-week {
-  background-color: rgba(96, 165, 250, 0.06);
+  background-color: rgba(96, 165, 250, 0.06) !important;
 }
+
+.current-week .week-header,
 .planner-week-header.current-week .wh-num,
 .planner-week-header.current-week .wh-range {
   color: #60a5fa;
