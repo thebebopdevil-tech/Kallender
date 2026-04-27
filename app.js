@@ -1341,6 +1341,8 @@ function renderGrid() {
   // Density tier drives pill font size, time visibility, and title wrapping
   const densityClass = colWidth >= 180 ? 'pill-wide' : colWidth >= 120 ? 'pill-medium' : 'pill-narrow';
 
+  const thisWeekStart = getWeekStart(today);
+
   const planner = document.createElement('div');
   planner.className = `planner-grid ${densityClass}`;
   planner.style.gridTemplateColumns = `${labelW}px repeat(${totalCols}, ${colWidth}px)`;
@@ -1353,11 +1355,16 @@ function renderGrid() {
 
   // Week header cells
   for (let w = 0; w < totalCols; w++) {
-    const wkStart = addDays(renderedStart, w * 7);
-    const wkEnd   = addDays(wkStart, 6);
-    const wkNum   = getISOWeekNumber(wkStart);
-    const cell    = document.createElement('div');
-    cell.className = 'planner-week-header' + (w === totalCols - 1 ? ' last-header' : '');
+    const wkStart    = addDays(renderedStart, w * 7);
+    const wkEnd      = addDays(wkStart, 6);
+    const wkNum      = getISOWeekNumber(wkStart);
+    const isThisWeek = isSameDay(wkStart, thisWeekStart);
+    const cell       = document.createElement('div');
+    cell.className = [
+      'planner-week-header',
+      isThisWeek        ? 'current-week' : '',
+      w === totalCols - 1 ? 'last-header' : '',
+    ].filter(Boolean).join(' ');
     cell.innerHTML = `<span class="wh-num">Week ${wkNum}</span><span class="wh-range">${formatShortRange(wkStart, wkEnd)}</span>`;
     planner.appendChild(cell);
   }
@@ -1369,9 +1376,14 @@ function renderGrid() {
   planner.appendChild(adLabel);
 
   for (let w = 0; w < totalCols; w++) {
-    const wkStart = addDays(renderedStart, w * 7);
-    const adCell  = document.createElement('div');
-    adCell.className = 'planner-allday-cell' + (w === totalCols - 1 ? ' last-col' : '');
+    const wkStart    = addDays(renderedStart, w * 7);
+    const isThisWeek = isSameDay(wkStart, thisWeekStart);
+    const adCell     = document.createElement('div');
+    adCell.className = [
+      'planner-allday-cell',
+      isThisWeek          ? 'current-week' : '',
+      w === totalCols - 1 ? 'last-col'     : '',
+    ].filter(Boolean).join(' ');
     adCell.dataset.weekStart = `${wkStart.getFullYear()}-${String(wkStart.getMonth()+1).padStart(2,'0')}-${String(wkStart.getDate()).padStart(2,'0')}`;
     getAllDayEventsForWeek(wkStart).forEach(({ event: ev, cal }) => {
       adCell.appendChild(createEventPill(ev, cal));
@@ -1387,15 +1399,17 @@ function renderGrid() {
     planner.appendChild(label);
 
     for (let w = 0; w < totalCols; w++) {
-      const date      = addDays(renderedStart, w * 7 + d);
-      const isToday   = date.getTime() === today.getTime();
-      const isWeekend = d >= 5;
+      const date       = addDays(renderedStart, w * 7 + d);
+      const isToday    = date.getTime() === today.getTime();
+      const isWeekend  = d >= 5;
+      const isThisWeek = isSameDay(addDays(renderedStart, w * 7), thisWeekStart);
 
       const cell = document.createElement('div');
       cell.className = [
         'planner-cell',
-        isToday   ? 'today'   : '',
-        isWeekend ? 'weekend' : '',
+        isToday    ? 'today'        : '',
+        isWeekend  ? 'weekend'      : '',
+        isThisWeek ? 'current-week' : '',
         w === totalCols - 1 ? 'last-col' : '',
       ].filter(Boolean).join(' ');
       cell.dataset.date = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
