@@ -1241,7 +1241,7 @@ kbd {
 .planner-cell {
   position: relative;       /* needed for .time-indicator absolute positioning */
   border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   padding: 6px 7px;
   min-height: 96px;
   display: flex;
